@@ -1,2 +1,5 @@
-# Reproducibility-vimixr-on-simulations-and-gene-expression-data
-This repository contains codes and files for reproducing results obtained by applying vimixr R package on simulations and gene expression data for Leukemia sub-type clustering
+# Reproducibility:vimixr on simulations and gene-expression data
+This repository contains R codes (***Code.R*** file) and files for reproducing results obtained by applying **vimixr** R package on simulations and gene expression data for [Leukemia sub-type clustering](https://schlieplab.org/Static/Supplements/CompCancer/Affymetrix/armstrong-2002-v2/). Long computations are carried out using [Curta Cluster](https://redmine.mcia.fr/projects/cluster-curta), and sample R codes are provided in ***SampleCodesCurta.R*** file. As the codes take 10~20 hours for computation even in the [Curta Cluster](https://redmine.mcia.fr/projects/cluster-curta), they are commented out in ***SampleCodesCurta.R*** file, but can be found under the commented line "#the code:" for each sample.
+
+The results are compiled in the *Results* folder with the intermediate and final 
+results; along with generated pdfs in *Results/Figures* folder from those results.
