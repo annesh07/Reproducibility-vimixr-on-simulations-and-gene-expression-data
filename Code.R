@@ -62,7 +62,7 @@ p2 <- ggplot(df_long, aes(x = Model, y = Value, color = Model)) +
         panel.grid.major.x = element_blank(),   
         panel.grid.minor.x = element_blank())
 library(patchwork)
-p1|p2
+p_1 <- p1|p2
 
 #generates Fig_1.pdf in Results/Figures folder
 
@@ -116,7 +116,7 @@ library(MetBrewer)
 my_cols <- c(met.brewer("Signac")[13],met.brewer("Signac")[12],met.brewer("Signac")[11])
 
 library(ggplot2)
-ggplot(long_df, aes(x = Source, y = Value, color = Model)) +
+p_2 <- ggplot(long_df, aes(x = Source, y = Value, color = Model)) +
   geom_boxplot(fill = "grey88",position = position_dodge(0.8), width = 0.7) +
   theme_minimal() +
   labs(title = "ARI boxplots for cluster-specific models",
@@ -189,7 +189,7 @@ p2 <- ggplot(dfk0, aes(x = x, y = y, color = as.factor(Cluster))) +
         panel.grid.minor.x = element_blank()) +
   scale_color_manual(values = my_col2)
 
-p1|p2
+p_3 <- p1|p2
 
 #generates Fig_3.pdf in Results/Figures folder
 
@@ -239,7 +239,7 @@ p2 <- ggplot(df, aes(x = as.factor(Cluster), y = VLL, color = as.factor(Cluster)
         panel.grid.major.x = element_blank(),   
         panel.grid.minor.x = element_blank()) +
   scale_color_manual(values = my_col2)
-p1|p2
+p_S1 <- p1|p2
 
 #generates Fig_S1.pdf in Results/Figures folder
 
@@ -321,7 +321,7 @@ p4 <- ggplot() +
     plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
     axis.title = element_text(size = 9)
   )
-p3|p4
+p_S2 <- p3|p4
 
 #generates Fig_S2.pdf in Results/Figures folder
 
@@ -331,29 +331,30 @@ p3|p4
 #implemented using DPMGibbsN function from NPflow package; due to time taken
 #for microbenching, the results are provided as violinplot.csv
 #the code
-# set.seed(08012026)
-# N <- 100
-# D <- 100
-# T0 <- 20
-# l_allot <- rbinom(N, 1, 0.5)
-# X <- matrix(0, N, D)
-# for (n in 1:N){
-#   X[n,] <- rnorm(D, 0, 0.5) + l_allot[n]*5
-# }
-# Plog <- matrix(runif(2000, -5, -0.001), nrow = N)
-# 
-# #NPflow (Boris)
-# library(NPflow)
-# hyperG0 <- list()
-# hyperG0[["mu"]] <- rep(0,D)
-# hyperG0[["kappa"]] <- 0.001
-# hyperG0[["nu"]] <- D+2
-# hyperG0[["lambda"]] <- diag(D)/10
-# a <- 0.0001
-# b <- 0.0001
-# N <- 1000
-# nbclust_init <- 20
-# 
+set.seed(08012026)
+N <- 100
+D <- 100
+T0 <- 20
+l_allot <- rbinom(N, 1, 0.5)
+X <- matrix(0, N, D)
+for (n in 1:N){
+  X[n,] <- rnorm(D, 0, 0.5) + l_allot[n]*5
+}
+Plog <- matrix(runif(2000, -5, -0.001), nrow = N)
+
+#NPflow (Boris)
+library(NPflow)
+hyperG0 <- list()
+hyperG0[["mu"]] <- rep(0,D)
+hyperG0[["kappa"]] <- 0.001
+hyperG0[["nu"]] <- D+2
+hyperG0[["lambda"]] <- diag(D)/10
+a <- 0.0001
+b <- 0.0001
+N <- 1000
+nbclust_init <- 20
+# microbencmarking (commented code below) takes ~2-3 hours, so results
+# of microbenchmarking attached and used. The code for microbenchmarking results:
 # violinplot <- microbenchmark::microbenchmark(DPMGibbsN(t(X), hyperG0, a, b, N, doPlot = F), 
 #                                              vimixr::cvi_npmm(X, variational_params = T0, prior_shape_alpha = 0.001, 
 #                                                               prior_rate_alpha = 0.001, post_shape_alpha = 0.001, 
@@ -381,7 +382,7 @@ violin_col <- met.brewer("Hokusai2")[c(2,5)]
 library(ggplot2)
 library(MetBrewer)
 library(scales)
-ggplot(df, aes(x=expr, y=time, fill = expr)) +
+p_S3 <- ggplot(df, aes(x=expr, y=time, fill = expr)) +
   geom_violin(trim=FALSE) +
   scale_y_log10(
     breaks = scales::log_breaks(base = 10),
@@ -485,7 +486,7 @@ ggplot_pca_pred <- ggplot(pca_df_pred, aes(x = PC1, y = PC2,
   scale_color_manual(values = my_col_pca_pred)+ 
   theme(plot.title = element_text(face = "bold"))
 
-ggplot_pca | ggplot_pca_pred 
+p_4 <- ggplot_pca | ggplot_pca_pred 
 
 #generates Fig_4.pdf in Results/Figures folder
 
@@ -526,7 +527,7 @@ pca_df_pred4 <- data.frame("PC1" = pca$x[,1], "PC2" = pca$x[,2],
 my_col_pca_pred4 <- c(met.brewer("Signac")[4], met.brewer("VanGogh2")[4], 
                       met.brewer("Manet")[11], lighten(met.brewer("Klimt")[6], 
                                                        amount = 0.3))
-ggplot_pca_pred4 <- ggplot(pca_df_pred4, aes(x = PC1, y = PC2, 
+p_5 <- ggplot(pca_df_pred4, aes(x = PC1, y = PC2, 
                                              color = Cluster, shape = Cluster)) +
   geom_point(size = 3, alpha = 0.9) +
   labs(title = "PCA projection: Sparse DPMM clusters", 
@@ -640,7 +641,7 @@ ht <- Heatmap(d_ALL, name = "Expression level",
               )
 )
 
-draw(ht, column_title = "Sparse DPMM clusters",
+p_6 <- draw(ht, column_title = "Sparse DPMM clusters",
      column_title_side = "bottom",
      column_title_gp = gpar(fontsize = 18, fontface = "bold"))
 
@@ -798,7 +799,30 @@ ari_leiden <- mclust::adjustedRandIndex(tag1, cl_leiden)
 ##fig 7
 #comparison plots based on average run-time, number of posterior clusters 
 #and ARI scores; the metrics values used based on the above results and 
-#pred output (for Sparse DPMM)
+#pred output (for Sparse DPMM, implementation below)
+#M0 <- as.integer(Sys.time())
+#R0 <- vimixr::cvi_npmm(Y3, variational_params = 20, prior_shape_alpha = 0.001,
+#                       prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
+#                       post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(Y3)),
+#                       post_mean_eta = matrix(0, 20, ncol(Y3)),
+#                       log_prob_matrix = NULL,
+#                       maxit = 1000,
+#                       n_inits = 1,
+#                       Seed = c(1106663),
+#                       covariance_type="full",fixed_variance=FALSE,
+#                       cluster_specific_covariance = TRUE,
+#                       variance_prior_type = "sparse",
+#                       prior_shape_d_cs_cov = matrix(28.90762, 1, 20),
+#                       prior_rate_d_cs_cov = matrix(28.90762, 20, ncol(Y3)),
+#                       prior_var_offd_cs_cov = 100000,
+#                       post_shape_d_cs_cov = matrix(0.001, 1, 20),
+#                       post_rate_d_cs_cov = matrix(0.001, 20, ncol(Y3)),
+#                       post_var_offd_cs_cov = array(0.001, c(ncol(Y3), ncol(Y3), 20)),
+#                       scaling_cov_eta = (nrow(Y3)+1))
+#M1 <- as.integer(Sys.time())
+#tym <- M1-M0
+#pred <- apply(R0$posterior$'log Probability matrix', MARGIN = 1, FUN=which.max)
+
 cl_models <- c(1,3,1,3,2,5,2,3)
 ari_models <- c(1e-2, 0.4279457, 1e-2, 0.07682049, 0.5919361, 0.4848823, 0.5919361, 0.9213999)
 time_models <- c(0.023, 0.0197, 0.0169, 0.158, 0.048, 0.014, 0.156, 75)
@@ -898,9 +922,10 @@ p_ari <- ggplot(data, aes(x = algorithm, y = ari, fill = algorithm)) +
   ) +
   ylim(0, 1)
 
-main_plots <- p_clusters | p_ari
+p0 <- p_clusters | p_ari
 
-final_plot <- inset_grid / main_plots + 
+#final plot
+p_7 <- inset_grid / p0 + 
   plot_layout(heights = c(1, 3)) +
   plot_annotation(
     title = "Benchmark of Clustering Techniques",
