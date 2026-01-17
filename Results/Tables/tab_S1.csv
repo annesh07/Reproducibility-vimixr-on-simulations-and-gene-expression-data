@@ -1,0 +1,8 @@
+"","Clustering method","k_opt"
+"1","DBSCAN",2
+"2","HDBSCAN",5
+"3","sNNclust",5
+"4","HDDC (random)",4
+"5","HDDC (k-means)",2
+"6","Leiden",2
+"7","K-means",2

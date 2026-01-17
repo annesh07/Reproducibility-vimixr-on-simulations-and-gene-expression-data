@@ -1,4 +1,20 @@
-library(vimixr)
+#install required packages
+packages <- c("vimixr", "MetBrewer", "patchwork", "mclust", "readxl", 
+              "dplyr", "ggplot2", "tidyr", "scales", "NPflow", "colorspace", 
+              "readr", "biomaRt", "ComplexHeatmap", "viridis", "circlize", 
+              "grid", "gridExtra", "dbscan", "HDclassif", "FNN", "igraph", 
+              "leiden", "cluster", "reticulate")
+
+for (p in packages) {
+  if (!requireNamespace(p, quietly = TRUE)) {
+    install.packages(p)
+  }
+  library(p, character.only = TRUE)
+}
+#install python packages for Leiden
+install_python(version = "3.10")
+py_install(c("igraph", "leidenalg"))
+
 
 ##fig 1
 #results from Curta Cluster 
@@ -7,7 +23,6 @@ library(vimixr)
 #allocation matrix Plog; the output contains 4 columns namely total run-time, 
 #average run-time per iteration, number of clusters & ARI respectively. 
 
-library("readxl")
 fixed_diagonal <- read_excel("Results/fixed_diagonal_N.xlsx", sheet = 1)
 fixed_full <- read_excel("Results/fixed_full_N.xlsx", sheet = 1)
 varied_IW <- read_excel("Results/varied_IW_N.xlsx", sheet = 1)
@@ -21,13 +36,10 @@ a_dat <- data.frame(c(fixed_diagonal[1:100,3], fixed_full[1:100,3], varied_diago
                       varied_decomposed[1:100,3], varied_csIW[1:100,3], varied_csSparse[1:100,3], varied_csoffD[1:100,3]))
 colnames(a_dat) <- c("M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8")
 
-library(tidyr)
 #create a long data frame with all the columns one after another
 a_dat_df <- pivot_longer(a_dat, cols = everything(), names_to = "Model", values_to = "Value")
 
-library(MetBrewer)
 my_col <- c(met.brewer("Signac")[3],met.brewer("Signac")[6],met.brewer("Signac")[4],met.brewer("Signac")[5],met.brewer("Signac")[10],met.brewer("Signac")[13],met.brewer("Signac")[12],met.brewer("Signac")[11])
-library(ggplot2)
 p1 <- ggplot(a_dat_df, aes(x = Model, y = Value, color = Model)) +
   geom_boxplot(fill = "grey88") +
   ggtitle(expression("(a) " * K[post] * " boxplots")) +
@@ -61,7 +73,6 @@ p2 <- ggplot(df_long, aes(x = Model, y = Value, color = Model)) +
         axis.title.y = element_text(size = 12),
         panel.grid.major.x = element_blank(),   
         panel.grid.minor.x = element_blank())
-library(patchwork)
 p_1 <- p1|p2
 
 #generates Fig_1.pdf in Results/Figures folder
@@ -95,9 +106,6 @@ varied_csoffD <- read_excel("Results/varied_csoffD_K.xlsx", sheet = 4)
 df4 <- data.frame(c(varied_csIW[1:100,4], varied_csSparse[1:100,4], varied_csoffD[1:100,4]))
 colnames(df4) <- c("M6", "M7", "M8")
 
-library(dplyr)
-library(tidyr)
-
 df1$Source <- "DF1"
 df2$Source <- "DF2"
 df3$Source <- "DF3"
@@ -112,10 +120,8 @@ long_df <- pivot_longer(combined_df,
                         names_to = "Model", 
                         values_to = "Value")
 
-library(MetBrewer)
 my_cols <- c(met.brewer("Signac")[13],met.brewer("Signac")[12],met.brewer("Signac")[11])
 
-library(ggplot2)
 p_2 <- ggplot(long_df, aes(x = Source, y = Value, color = Model)) +
   geom_boxplot(fill = "grey88",position = position_dodge(0.8), width = 0.7) +
   theme_minimal() +
@@ -153,9 +159,6 @@ dfa0 <- data.frame(vlla0)
 vllk0 <- read.csv("Results/VLL_diffk0_NB.csv")
 dfk0 <- data.frame(vllk0)
 
-library(ggplot2)
-library(patchwork)
-library(MetBrewer)
 my_col1 <- met.brewer("Nizami")[c(1,2,6,8,5)]
 p1 <- ggplot(dfa0, aes(x = x, y = y, color = as.factor(Cluster))) +
   geom_point(size = 3, alpha = 0.9) +
@@ -199,12 +202,9 @@ p_3 <- p1|p2
 # comparing ELBO vs VLL scores for a fixed N=100, D=1000, K=3 Gaussian 
 #simulations for 1000 random initialisations of Plog. Output are 4 columns 
 #namely ELBO values, VLL values, ARI scores and #clusters estimated
-library("readxl")
 elbovsvll <- read_excel("Results/ELBOvsVLL.xlsx", sheet = 1)
 df <- data.frame(elbovsvll)
 
-library(ggplot2)
-library(patchwork)
 my_col2 <- met.brewer("Nizami")[c(2, 8, 6)]
 p1 <- ggplot(df, aes(x = as.factor(Cluster), y = ELBO, color = as.factor(Cluster))) +
   geom_boxplot(fill = "grey88") +
@@ -251,8 +251,6 @@ p_S1 <- p1|p2
 #varied_csSparse_N.xlsx at B102 cell of each sheet in every 10 sheets corresponding
 #to 10 sample size N; similar results for comparing speed across dimension D
 #in varied_csSparse_D.xlsx
-library("ggplot2")
-library("patchwork")
 nvar <- c(0.020044444, 0.040899069, 0.077419278, 0.129530247, 0.203332588, 0.295528986,
           0.404437847, 0.515663789, 0.647167268, 0.793512615)
 x_labels <- paste0("logN=", log(seq(100, 1000, by = 100)))
@@ -265,7 +263,6 @@ x_labels <- paste0("d=", seq(100, 1000, by = 100))
 dfd <- data.frame(x = factor(x_labels, levels = x_labels), y = dvar)
 
 #linear-dependencies
-library(scales)
 approx_scientific <- function(x){
   rounded <- round(x)
   sci <- format(rounded, scientific = TRUE, trim = TRUE)
@@ -343,7 +340,6 @@ for (n in 1:N){
 Plog <- matrix(runif(2000, -5, -0.001), nrow = N)
 
 #NPflow (Boris)
-library(NPflow)
 hyperG0 <- list()
 hyperG0[["mu"]] <- rep(0,D)
 hyperG0[["kappa"]] <- 0.001
@@ -379,9 +375,6 @@ violinplot = read.csv("Results/violinplot.csv")
 violinplot$time <- violinplot$time/1e+9
 df <- as.data.frame(violinplot)
 violin_col <- met.brewer("Hokusai2")[c(2,5)]
-library(ggplot2)
-library(MetBrewer)
-library(scales)
 p_S3 <- ggplot(df, aes(x=expr, y=time, fill = expr)) +
   geom_violin(trim=FALSE) +
   scale_y_log10(
@@ -404,9 +397,6 @@ p_S3 <- ggplot(df, aes(x=expr, y=time, fill = expr)) +
 
 
 #Leukemia data implementation
-library(readr)
-library(ggplot2)
-library(MetBrewer)
 data1 <- read_delim("https://schlieplab.org/Static/Supplements/CompCancer/Affymetrix/armstrong-2002-v2/armstrong-2002-v2_database.txt", delim = "\t", col_names = TRUE)
 gene1 <- data1[2:2195,1]
 Y0 <- data1[2:2195, 2:73]
@@ -448,10 +438,6 @@ pred[which(pred==2)]="B"
 pred[which(pred=="A")]=2
 pred[which(pred=="B")]=1
 
-library(ggplot2)
-library(MetBrewer)
-library(colorspace)
-library(patchwork)
 pca <- prcomp(Y3)
 #variance
 var_explained <- pca$sdev^2 / sum(pca$sdev^2)
@@ -546,7 +532,6 @@ p_5 <- ggplot(pca_df_pred4, aes(x = PC1, y = PC2,
 #and comparing those signatures for the estimated clusters with weaker 
 #hyper-priors ,i.e., pred4
 pred <- pred4
-library(readr)
 data1 <- read_delim("https://schlieplab.org/Static/Supplements/CompCancer/Affymetrix/armstrong-2002-v2/armstrong-2002-v2_database.txt", delim = "\t", col_names = TRUE)
 fulld <- read_delim("https://pubs.broadinstitute.org/mpr/projects/Leukemia/expression_data.txt", delim = "\t", col_names = TRUE)
 gene <- fulld[1:12582,1]$Name
@@ -555,7 +540,6 @@ Y <- (matrix(as.numeric(t(Y0)), nrow = dim(Y0)[2]))
 Y <- t(apply(Y, 1, FUN = function(x){(x-mean(x))/sqrt(var(x))}))
 tag1 <- as.character(data1[1, 2:73])
 
-library(biomaRt)
 ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
 results <- getBM(
   attributes = c(
@@ -603,14 +587,8 @@ make_html_label <- function(x) {
 
 row_html <- sapply(rownames(d_ALL), make_html_label)
 
-library(ComplexHeatmap)
-library(scales)
 levs <- levels(as.factor(pred))
 col_map <- setNames(scales::hue_pal()(length(levs)), levs)
-
-library(viridis)
-library(circlize)
-library(MetBrewer)
 
 met_colors_disc <- met.brewer("OKeeffe1")[rev(c(2,3,4,6,8,9,10))]
 col_fun <- colorRamp2(breaks = seq(-6.1, 6.1, length.out = 7),
@@ -651,20 +629,10 @@ p_6 <- draw(ht, column_title = "Sparse DPMM clusters",
 ##comparison with s.o.t.a techniques 
 #packages for implementation on the Leukemia data Y3
 X = Y3
-library(dbscan)
-library(HDclassif)
-library(FNN)
-library(igraph)
-library(leiden)
-library(reticulate)
-install_python(version = "3.10")
-py_install(c("igraph", "leidenalg"))
-library(cluster)
 sil_width_kmeans <- c()
 dbcv_dbscan <- rep(0, 9)
 dbcv_hdbscan <- rep(0, 9)
 dbcv_sNNclust <- rep(0, 9)
-Sdbw_dbscan <- rep(0, 9)
 bic_hddc <- rep(0, 9)
 bic_hddc_kmeans <- rep(0, 9)
 mod_leiden <- rep(0, 9)
@@ -713,15 +681,28 @@ for(k in 2:10){
   mod_leiden[k-1] <- modularity(g, cl_leiden)
 }
 
+algo_names <- c("DBSCAN", "HDBSCAN", "sNNclust", "HDDC (random)", "HDDC (k-means)", 
+                "Leiden", "K-means")
+opt_k <- rep(0, 7)
+opt_k[1] <- which.max(dbcv_dbscan) + 1
+opt_k[2] <- which.max(dbcv_hdbscan) + 1
+opt_k[3] <- which.max(dbcv_sNNclust) + 1
+opt_k[4] <- which.max(bic_hddc) + 1
+opt_k[5] <- which.max(bic_hddc_kmeans) + 1
+opt_k[6] <- which.max(mod_leiden) + 1
+opt_k[7] <- which.max(sil_width_kmeans) + 1
+
 #visualising the silhouette coefficient for different k
 # plot(2:10, sil_width_kmeans[2:10], type = "b", pch = 19,
 #      xlab = "Number of clusters K",
 #      ylab = "Average silhouette width",
 #      main = "Silhouette Method")
 
+
 #these provide the optimal k corresponding to every method 
 #(Supplementary Table S1), which is used to evaluate the Leukemia data, 
 #and compared based on external metrics #posterior clusters and ARI
+
 
 #k-means
 set.seed(05122005)
@@ -767,7 +748,7 @@ ari_sNNclust <- mclust::adjustedRandIndex(tag1, cl_sNNclust)
 set.seed(05122005)
 t0 <- as.numeric(Sys.time())
 k=3
-cl_hddc <- hddc(X, K = k, model="AKBQKD", init = "random")
+cl_hddc <- hddc(X, K = k, model="AKBQKD", init = "random")$class
 t1 <- as.numeric(Sys.time())
 M0_hddc <- t1 - t0
 ari_hddc <- mclust::adjustedRandIndex(tag1, cl_hddc)
@@ -829,12 +810,7 @@ time_models <- c(0.023, 0.0197, 0.0169, 0.158, 0.048, 0.014, 0.156, 75)
 iteration_models <- c(1,1,1,6,2,2,1,11)
 algo_names <- c("DBSCAN", "HDBSCAN", "sNNclust", "HDDC (random)", "HDDC (k-means)", 
                 "Leiden", "K-means", "Sparse DPMM")
-library(ggplot2)
-library(patchwork)
-library(grid)
-library(gridExtra)
-library(dplyr)
-library(MetBrewer)
+
 n_algos <- length(ari_models)
 
 data <- data.frame(

@@ -358,16 +358,33 @@ display: none;
 file) and files for reproducing results obtained by applying
 <strong>vimixr</strong> R package on simulations and gene expression
 data for <a href="https://schlieplab.org/Static/Supplements/CompCancer/Affymetrix/armstrong-2002-v2/">Leukemia
-sub-type clustering</a>. Long computations are carried out using <a href="https://redmine.mcia.fr/projects/cluster-curta">Curta Cluster</a>,
-and sample R codes are provided in
-<strong><em>SampleCodesCurta.R</em></strong> file. As the codes take
-10~20 hours for computation even in the <a href="https://redmine.mcia.fr/projects/cluster-curta">Curta Cluster</a>,
+sub-type clustering</a>. The package mainly performs probabilistic
+clustering of a given data. Most of the computations are performed in
+Rstudio. Time intensive computations (~ 10-20 hours long) are carried
+out using <a href="https://redmine.mcia.fr/projects/cluster-curta">Curta
+Cluster</a>. For reference of the Curta codes, sample R codes are
+provided in <strong><em>SampleCodesCurta.R</em></strong> file. As the
+codes take 10~20 hours for computation even in the <a href="https://redmine.mcia.fr/projects/cluster-curta">Curta Cluster</a>,
 they are commented out in <strong><em>SampleCodesCurta.R</em></strong>
 file, but can be found under the commented line “#the code:” for each
 sample.</p>
-<p>The results are compiled in the <em>Results</em> folder with the
-intermediate and final results; along with generated pdfs in
-<em>Results/Figures</em> folder from those results.</p>
+<p>The layout is simple:</p>
+<ul>
+<li><p><strong><em>Code.R</em></strong> contains the complete code for
+generating all the figures and one supplementary table</p></li>
+<li><p><strong><em>SampleCodesCurta.R</em></strong> contains the Curta
+codes (commented out)</p></li>
+<li><p><em>Results</em> folder contains the intermediate and final
+computation run results as .xlsx/.csv files (explained in
+<strong><em>Code.R</em></strong>)</p>
+<ol style="list-style-type: decimal">
+<li><p>Figures in <em>Results/Figures</em></p></li>
+<li><p>Tables in <em>Results/Table</em></p></li>
+</ol></li>
+</ul>
+<p>To access the repository from Github, the user can clone the git
+repository or download the zip file from the <img src="data:image/svg+xml;charset=utf-8;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzNyIgaGVpZ2h0PSIyMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJDb2RlIj48dGl0bGU+Q29kZTwvdGl0bGU+PGxpbmVhckdyYWRpZW50IGlkPSJzIiB4Mj0iMCIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2JiYiIgc3RvcC1vcGFjaXR5PSIuMSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1vcGFjaXR5PSIuMSIvPjwvbGluZWFyR3JhZGllbnQ+PGNsaXBQYXRoIGlkPSJyIj48cmVjdCB3aWR0aD0iMzciIGhlaWdodD0iMjAiIHJ4PSIzIiBmaWxsPSIjZmZmIi8+PC9jbGlwUGF0aD48ZyBjbGlwLXBhdGg9InVybCgjcikiPjxyZWN0IHdpZHRoPSIwIiBoZWlnaHQ9IjIwIiBmaWxsPSIjOTdjYTAwIi8+PHJlY3QgeD0iMCIgd2lkdGg9IjM3IiBoZWlnaHQ9IjIwIiBmaWxsPSIjOTdjYTAwIi8+PHJlY3Qgd2lkdGg9IjM3IiBoZWlnaHQ9IjIwIiBmaWxsPSJ1cmwoI3MpIi8+PC9nPjxnIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJWZXJkYW5hLEdlbmV2YSxEZWphVnUgU2FucyxzYW5zLXNlcmlmIiB0ZXh0LXJlbmRlcmluZz0iZ2VvbWV0cmljUHJlY2lzaW9uIiBmb250LXNpemU9IjExMCI+PHRleHQgYXJpYS1oaWRkZW49InRydWUiIHg9IjE4NSIgeT0iMTUwIiBmaWxsPSIjMDEwMTAxIiBmaWxsLW9wYWNpdHk9Ii4zIiB0cmFuc2Zvcm09InNjYWxlKC4xKSIgdGV4dExlbmd0aD0iMjcwIj5Db2RlPC90ZXh0Pjx0ZXh0IHg9IjE4NSIgeT0iMTQwIiB0cmFuc2Zvcm09InNjYWxlKC4xKSIgZmlsbD0iI2ZmZiIgdGV4dExlbmd0aD0iMjcwIj5Db2RlPC90ZXh0PjwvZz48L3N2Zz4=" />
+tab.</p>
 </div>
 
 
