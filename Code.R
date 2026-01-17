@@ -637,48 +637,49 @@ bic_hddc <- rep(0, 9)
 bic_hddc_kmeans <- rep(0, 9)
 mod_leiden <- rep(0, 9)
 set.seed(05122005)
-for(k in 2:10){
+for(k in 1:9){
+  k0 <- k + 1
   #Silhouette coeff. for k-means
-  km <- kmeans(Y3, centers = k, nstart = 1)
+  km <- kmeans(Y3, centers = k0, nstart = 1)
   sil <- silhouette(km$cluster, dist(Y3))
   sil_width_kmeans[k] <- mean(sil[, 3])
   
   #dbscan
-  kdist <- kNNdist(prcomp(X, rank. = 10)$x, k = k)      
+  kdist <- kNNdist(prcomp(X, rank. = 10)$x, k = k0)      
   kdist_sorted <- sort(kdist, decreasing = FALSE)
   curv <- c(0, abs(diff(kdist_sorted, differences = 2)), 0)   
   knee_idx <- which.max(curv)
   eps_curvature <- kdist_sorted[knee_idx]
   cl_dbscan <- dbscan(prcomp(X, rank. = 10)$x, eps = eps_curvature, minPts = (k+1))$cluster
-  dbcv_dbscan[k-1] <- dbcv(prcomp(X, rank. = 10)$x, cl_dbscan)$score
+  dbcv_dbscan[k] <- dbcv(prcomp(X, rank. = 10)$x, cl_dbscan)$score
   
   #hdbscan
-  cl_hdbscan <- hdbscan(X, minPts = k)$cluster
-  dbcv_hdbscan[k-1] <- dbcv(prcomp(X, rank. = 10)$x, cl_hdbscan)$score
+  cl_hdbscan <- hdbscan(X, minPts = k0)$cluster
+  dbcv_hdbscan[k] <- dbcv(prcomp(X, rank. = 10)$x, cl_hdbscan)$score
   
   #sNNclust
-  snn_mat <- sNN(prcomp(X, rank. = 10)$x, k = k)$shared
+  snn_mat <- sNN(prcomp(X, rank. = 10)$x, k = k0)$shared
   eps <- floor(k/2)
-  cl_sNNclust <- sNNclust(X, k=k, eps=eps, minPts=eps+1, borderPoints = T)$cluster #same issues
-  dbcv_sNNclust[k-1] <- dbcv(prcomp(X, rank. = 10)$x, cl_sNNclust)$score
+  cl_sNNclust <- sNNclust(X, k=k0, eps=eps, minPts=eps+1, borderPoints = T)$cluster #same issues
+  dbcv_sNNclust[k] <- dbcv(prcomp(X, rank. = 10)$x, cl_sNNclust)$score
   
   #hddc
-  r_hddc <- hddc(X, K = k, model="ALL", init = "random")
-  bic_hddc[k-1] <- r_hddc$BIC
+  r_hddc <- hddc(X, K = k0, model="ALL", init = "random")
+  bic_hddc[k] <- r_hddc$BIC
   
-  r_hddc_kmeans <- hddc(X, K=k, model="ALL", init = "kmeans")
-  bic_hddc_kmeans[k-1] <- r_hddc_kmeans$BIC
+  r_hddc_kmeans <- hddc(X, K=k0, model="ALL", init = "kmeans")
+  bic_hddc_kmeans[k] <- r_hddc_kmeans$BIC
   
   #Leiden, modularity based k selection
-  knn_res <- get.knn(X, k = k)
+  knn_res <- get.knn(X, k = k0)
   edges <- cbind(
-    rep(1:nrow(X), each = k),
+    rep(1:nrow(X), each = k0),
     as.vector(t(knn_res$nn.index))
   )
   g <- graph_from_edgelist(edges, directed = FALSE)
   g <- simplify(g)
   cl_leiden <- leiden(g, resolution_parameter = 1.0)
-  mod_leiden[k-1] <- modularity(g, cl_leiden)
+  mod_leiden[k] <- modularity(g, cl_leiden)
 }
 
 algo_names <- c("DBSCAN", "HDBSCAN", "sNNclust", "HDDC (random)", "HDDC (k-means)", 
@@ -692,28 +693,25 @@ opt_k[5] <- which.max(bic_hddc_kmeans) + 1
 opt_k[6] <- which.max(mod_leiden) + 1
 opt_k[7] <- which.max(sil_width_kmeans) + 1
 
-#visualising the silhouette coefficient for different k
-# plot(2:10, sil_width_kmeans[2:10], type = "b", pch = 19,
-#      xlab = "Number of clusters K",
-#      ylab = "Average silhouette width",
-#      main = "Silhouette Method")
-
+#supplementary table tab_s1
+tab_S1 <- data.frame(algo_names, opt_k)
+names(tab_S1) <- c("Clustering method", "k_opt")
+# write.csv(tab_S1, file="Results/Tables/tab_S1.csv")
 
 #these provide the optimal k corresponding to every method 
 #(Supplementary Table S1), which is used to evaluate the Leukemia data, 
-#and compared based on external metrics #posterior clusters and ARI
+#and compared based on external metrics: posterior clusters and ARI
 
 
-#k-means
-set.seed(05122005)
-Km <- kmeans(Y3, centers = 2, nstart = 1, trace = 1)
-pred_km <- Km$cluster
-ari_km <- mclust::adjustedRandIndex(tag1, pred_km)
+cl_models <- rep(0 , 8)
+ari_models <- rep(0 , 8)
+time_models <- rep(0 , 8)
+iteration_models <- rep(0 , 8)
 
 #dbscan
 set.seed(05122005)
 t0 <- as.numeric(Sys.time())
-k=2
+k=opt_k[1]
 kdist <- kNNdist(X, k = k)      # returns N values (distance to k-th NN)
 kdist_sorted <- sort(kdist, decreasing = FALSE)
 curv <- c(0, abs(diff(kdist_sorted, differences = 2)), 0)   # discrete approx of 2nd deriv
@@ -721,50 +719,62 @@ knee_idx <- which.max(curv)
 eps_curvature <- kdist_sorted[knee_idx]
 cl_dbscan <- dbscan(X, eps = eps_curvature, minPts = k+1)$cluster
 t1 <- as.numeric(Sys.time())
-M0_dbscan <- t1 - t0
-ari_dbscan <- mclust::adjustedRandIndex(tag1, cl_dbscan)
+cl_models[1] <- length(unique(cl_dbscan))
+time_models[1] <- t1 - t0
+iteration_models[1] <- 1 #non-iterative implementation
+ari_models[1] <- mclust::adjustedRandIndex(tag1, cl_dbscan)
 
 #hdbscan
 set.seed(05122005)
 t0 <- as.numeric(Sys.time())
-k=5
+k=opt_k[2]
 cl_hdbscan <- hdbscan(X, minPts = k)$cluster
 t1 <- as.numeric(Sys.time())
-M0_hdbscan <- t1 - t0
-ari_hdbscan <- mclust::adjustedRandIndex(tag1, cl_hdbscan)
+cl_models[2] <- length(unique(cl_hdbscan))
+time_models[2] <- t1 - t0
+iteration_models[2] <- 1 #non-iterative implementation
+ari_models[2] <- mclust::adjustedRandIndex(tag1, cl_hdbscan)
 
 #sNNclust
 set.seed(05122005)
 t0 <- as.numeric(Sys.time())
-k=2
+k=opt_k[3]
 snn_mat <- sNN(X, k = k)$shared
 eps <- floor(quantile(snn_mat, 0.9))
 cl_sNNclust <- sNNclust(X, k=k, eps=eps, minPts=eps+3, borderPoints = T)$cluster #same issues
 t1 <- as.numeric(Sys.time())
-M0_sNNclust <- t1 - t0
-ari_sNNclust <- mclust::adjustedRandIndex(tag1, cl_sNNclust)
+cl_models[3] <- length(unique(cl_sNNclust))
+time_models[3] <- t1 - t0
+iteration_models[3] <- 1 #non-iterative implementation
+ari_models[3] <- mclust::adjustedRandIndex(tag1, cl_sNNclust)
 
 #hddc
 set.seed(05122005)
+k=opt_k[4]
+cl_hddc_m <- hddc(X, K = k, model="ALL", init = "random")$model #best model
 t0 <- as.numeric(Sys.time())
-k=3
-cl_hddc <- hddc(X, K = k, model="AKBQKD", init = "random")$class
+cl_hddc <- hddc(X, K = k, model=cl_hddc_m, init = "random")
 t1 <- as.numeric(Sys.time())
-M0_hddc <- t1 - t0
-ari_hddc <- mclust::adjustedRandIndex(tag1, cl_hddc)
+cl_models[4] <- length(unique(cl_hddc$class))
+time_models[4] <- t1 - t0
+iteration_models[4] <- length(cl_hddc$loglik_all)
+ari_models[4] <- mclust::adjustedRandIndex(tag1, cl_hddc$class)
 
 set.seed(05122005)
+k=opt_k[5]
+cl_hddc_km <- hddc(X, K = k, model="ALL", init = "kmeans")$model #best model
 t0 <- as.numeric(Sys.time())
-k=2
-cl_hddc_kmeans <- hddc(X, K = k, model="ABKQKD", init = "kmeans")$class
+cl_hddc_kmeans <- hddc(X, K = k, model="ABKQKD", init = "kmeans")
 t1 <- as.numeric(Sys.time())
-M0_hddc_kmeans <- t1 - t0
-ari_hddc_kmeans <- mclust::adjustedRandIndex(tag1, cl_hddc_kmeans)
+cl_models[5] <- length(unique(cl_hddc_kmeans$class))
+time_models[5] <- t1 - t0
+iteration_models[5] <- length(cl_hddc_kmeans$loglik_all)
+ari_models[5] <- mclust::adjustedRandIndex(tag1, cl_hddc_kmeans$class)
 
 #Leiden
 set.seed(05122005)
 t0 <- as.numeric(Sys.time())
-k=2
+k=opt_k[6]
 knn_res <- get.knn(X, k = k)
 edges <- cbind(
   rep(1:nrow(X), each = k),
@@ -774,43 +784,57 @@ g <- graph_from_edgelist(edges, directed = FALSE)
 g <- simplify(g)
 cl_leiden <- leiden(g, resolution_parameter = 1.0)
 t1 <- as.numeric(Sys.time())
-M0_leiden <- t1 - t0
-ari_leiden <- mclust::adjustedRandIndex(tag1, cl_leiden)
+cl_models[6] <- length(unique(cl_leiden))
+time_models[6] <- t1 - t0
+iteration_models[6] <- 2 #by default
+ari_models[6] <- mclust::adjustedRandIndex(tag1, cl_leiden)
+
+#k-means
+set.seed(05122005)
+t0 <- as.numeric(Sys.time())
+k=opt_k[7]
+Km <- kmeans(Y3, centers = k, nstart = 1, trace = 1)
+t1 <- as.numeric(Sys.time())
+cl_models[7] <- length(unique(Km$cluster))
+time_models[7] <- t1 - t0
+iteration_models[7] <- Km$iter
+ari_models[7] <- mclust::adjustedRandIndex(tag1, Km$cluster)
 
 ##fig 7
 #comparison plots based on average run-time, number of posterior clusters 
 #and ARI scores; the metrics values used based on the above results and 
 #pred output (for Sparse DPMM, implementation below)
-#M0 <- as.integer(Sys.time())
-#R0 <- vimixr::cvi_npmm(Y3, variational_params = 20, prior_shape_alpha = 0.001,
-#                       prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
-#                       post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(Y3)),
-#                       post_mean_eta = matrix(0, 20, ncol(Y3)),
-#                       log_prob_matrix = NULL,
-#                       maxit = 1000,
-#                       n_inits = 1,
-#                       Seed = c(1106663),
-#                       covariance_type="full",fixed_variance=FALSE,
-#                       cluster_specific_covariance = TRUE,
-#                       variance_prior_type = "sparse",
-#                       prior_shape_d_cs_cov = matrix(28.90762, 1, 20),
-#                       prior_rate_d_cs_cov = matrix(28.90762, 20, ncol(Y3)),
-#                       prior_var_offd_cs_cov = 100000,
-#                       post_shape_d_cs_cov = matrix(0.001, 1, 20),
-#                       post_rate_d_cs_cov = matrix(0.001, 20, ncol(Y3)),
-#                       post_var_offd_cs_cov = array(0.001, c(ncol(Y3), ncol(Y3), 20)),
-#                       scaling_cov_eta = (nrow(Y3)+1))
-#M1 <- as.integer(Sys.time())
-#tym <- M1-M0
-#pred <- apply(R0$posterior$'log Probability matrix', MARGIN = 1, FUN=which.max)
+set.seed(05122005)
+M0 <- as.integer(Sys.time())
+R0 <- cvi_npmm(Y3, variational_params = 20, prior_shape_alpha = 0.001,
+                      prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
+                      post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(Y3)),
+                      post_mean_eta = matrix(0, 20, ncol(Y3)),
+                      log_prob_matrix = NULL,
+                      maxit = 1000,
+                      n_inits = 1,
+                      Seed = c(1106663),
+                      covariance_type="full",fixed_variance=FALSE,
+                      cluster_specific_covariance = TRUE,
+                      variance_prior_type = "sparse",
+                      prior_shape_d_cs_cov = matrix(28.90762, 1, 20),
+                      prior_rate_d_cs_cov = matrix(28.90762, 20, ncol(Y3)),
+                      prior_var_offd_cs_cov = 100000,
+                      post_shape_d_cs_cov = matrix(0.001, 1, 20),
+                      post_rate_d_cs_cov = matrix(0.001, 20, ncol(Y3)),
+                      post_var_offd_cs_cov = array(0.001, c(ncol(Y3), ncol(Y3), 20)),
+                      scaling_cov_eta = (nrow(Y3)+1))
+M1 <- as.integer(Sys.time())
+pred <- apply(R0$posterior$'log Probability matrix', MARGIN = 1, FUN=which.max)
+cl_models[8] <- length(unique(pred))
+time_models[8] <- M1-M0
+iteration_models[8] <- R0$optimisation$Iterations - 1 #1st iteration is random starting point
+ari_models[8] <- mclust::adjustedRandIndex(tag1, pred)
 
-cl_models <- c(1,3,1,3,2,5,2,3)
-ari_models <- c(1e-2, 0.4279457, 1e-2, 0.07682049, 0.5919361, 0.4848823, 0.5919361, 0.9213999)
-time_models <- c(0.023, 0.0197, 0.0169, 0.158, 0.048, 0.014, 0.156, 75)
-iteration_models <- c(1,1,1,6,2,2,1,11)
-algo_names <- c("DBSCAN", "HDBSCAN", "sNNclust", "HDDC (random)", "HDDC (k-means)", 
-                "Leiden", "K-means", "Sparse DPMM")
+algo_names[8] <- "Sparse DPMM"
+time_models <- round(time_models, digits = 2)
 
+#generating figure 7 
 n_algos <- length(ari_models)
 
 data <- data.frame(
@@ -879,7 +903,7 @@ p_clusters <- ggplot(data, aes(x = algorithm, y = clusters, fill = algorithm)) +
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 10, face = "bold"),
-    plot.title = element_text(face = "bold", hjust = 0, size = 12),
+    plot.title = element_text(face = "bold", hjust = 0, size = 14),
     plot.margin = margin(10, 10, 10, 10)
   )
 
@@ -893,7 +917,7 @@ p_ari <- ggplot(data, aes(x = algorithm, y = ari, fill = algorithm)) +
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
     axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 10, face = "bold"),
-    plot.title = element_text(face = "bold", hjust = 0, size = 12),
+    plot.title = element_text(face = "bold", hjust = 0, size = 14),
     plot.margin = margin(10, 10, 10, 10)
   ) +
   ylim(0, 1)
@@ -907,8 +931,8 @@ p_7 <- inset_grid / p0 +
     title = "Benchmark of Clustering Techniques",
     subtitle = "a) Runtime (in seconds)",
     theme = theme(
-      plot.title = element_text(size = 15, face = "bold", hjust = 0.5),
-      plot.subtitle = element_text(size = 12, face = "bold", hjust = 0, 
+      plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+      plot.subtitle = element_text(size = 14, face = "bold", hjust = 0, 
                                    margin = margin(t = 5, b = 5))
     )
   )

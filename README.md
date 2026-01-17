@@ -12,6 +12,6 @@ The layout is simple:
   
     1) Figures in *Results/Figures*  
     
-    2) Tables in *Results/Table*
+    2) Tables in *Results/Tables*
 
 To access the repository from Github, the user can clone the git repository or download the zip file from the ![](https://img.shields.io/static/v1?label=&message=Code&color=green) tab. 
