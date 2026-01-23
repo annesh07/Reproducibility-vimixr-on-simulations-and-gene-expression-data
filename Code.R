@@ -1,7 +1,7 @@
 #install required packages
 packages <- c("vimixr", "MetBrewer", "patchwork", "mclust", "readxl", 
               "dplyr", "ggplot2", "tidyr", "scales", "NPflow", "colorspace", 
-              "readr", "BiocManager", "ComplexHeatmap", "viridis", "circlize", 
+              "readr", "BiocManager", "viridis", "circlize", 
               "grid", "gridExtra", "dbscan", "HDclassif", "FNN", "cluster", 
               "reticulate")
 
