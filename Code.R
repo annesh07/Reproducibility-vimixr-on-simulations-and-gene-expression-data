@@ -2,8 +2,8 @@
 packages <- c("vimixr", "MetBrewer", "patchwork", "mclust", "readxl", 
               "dplyr", "ggplot2", "tidyr", "scales", "NPflow", "colorspace", 
               "readr", "BiocManager", "ComplexHeatmap", "viridis", "circlize", 
-              "grid", "gridExtra", "dbscan", "HDclassif", "FNN", "igraph", 
-              "leiden", "cluster", "reticulate")
+              "grid", "gridExtra", "dbscan", "HDclassif", "FNN", "cluster", 
+              "reticulate")
 
 for (p in packages) {
   if (!requireNamespace(p, quietly = TRUE)) {
@@ -11,12 +11,18 @@ for (p in packages) {
   }
   library(p, character.only = TRUE)
 }
-#install biomaRt
+#install biomaRt and ComplexHeatmap
 BiocManager::install("biomaRt")
+BiocManager::install("ComplexHeatmap")
 library(biomaRt)
+library(ComplexHeatmap)
 #install python packages for Leiden
 install_python(version = "3.10")
 py_install(c("igraph", "leidenalg"))
+install.packages("igraph")
+install.packages("leiden")
+library(igraph)
+library(leiden)
 
 
 ##fig 1
