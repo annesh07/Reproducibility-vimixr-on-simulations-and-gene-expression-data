@@ -14,4 +14,5 @@ The layout is simple:
     
     2) Tables in *Results/Tables*
 
+The session information is provided in the *sessionInfo.txt* file.
 To access the repository from Github, the user can clone the git repository or download the zip file from the ![](https://img.shields.io/static/v1?label=&message=Code&color=green) tab. 
