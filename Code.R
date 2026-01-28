@@ -3,7 +3,7 @@ packages <- c("vimixr", "MetBrewer", "patchwork", "mclust", "readxl",
               "dplyr", "ggplot2", "tidyr", "scales", "NPflow", "colorspace", 
               "readr", "viridis", "circlize", "rlang", "gridtext",
               "grid", "gridExtra", "dbscan", "HDclassif", "FNN", "cluster", 
-              "reticulate", "igraph")
+              "reticulate", "igraph", "utils")
 
 for (p in packages) {
   if (!requireNamespace(p, quietly = TRUE)) {
@@ -82,8 +82,8 @@ p2 <- ggplot(df_long, aes(x = Model, y = Value, color = Model)) +
         panel.grid.minor.x = element_blank())
 Fig_1 <- p1|p2
 
-ggsave("Fig_1.pdf", plot = Fig_1, device = "pdf", path = "Results/Figures",
-       width = 5.76, height = 4.20, units = "in")
+# ggsave("Fig_1.pdf", plot = Fig_1, device = "pdf", path = "Results/Figures",
+#        width = 5.76, height = 4.20, units = "in")
 Fig_1
 #generates Fig_1.pdf in Results/Figures folder
 
@@ -152,8 +152,8 @@ Fig_2 <- ggplot(long_df, aes(x = Source, y = Value, color = Model)) +
         panel.grid.major.x = element_blank(),   
         panel.grid.minor.x = element_blank())
 
-ggsave("Fig_2.pdf", plot = Fig_2, device = "pdf", path = "Results/Figures",
-       width = 5.76, height = 4.20, units = "in")
+# ggsave("Fig_2.pdf", plot = Fig_2, device = "pdf", path = "Results/Figures",
+#        width = 5.76, height = 4.20, units = "in")
 Fig_2
 #generates Fig_2.pdf in Results/Figures folder
 
@@ -205,8 +205,8 @@ p2 <- ggplot(dfk0, aes(x = x, y = y, color = as.factor(Cluster))) +
   scale_color_manual(values = my_col2)
 Fig_3 <- p1|p2
 
-ggsave("Fig_3.pdf", plot = Fig_3, device = "pdf", path = "Results/Figures",
-       width = 10, height = 5.5, units = "in")
+# ggsave("Fig_3.pdf", plot = Fig_3, device = "pdf", path = "Results/Figures",
+#        width = 10, height = 5.5, units = "in")
 Fig_3
 #generates Fig_3.pdf in Results/Figures folder
 
@@ -255,8 +255,8 @@ p2 <- ggplot(df, aes(x = as.factor(Cluster), y = VLL, color = as.factor(Cluster)
   scale_color_manual(values = my_col2)
 Fig_S1 <- p1|p2
 
-ggsave("Fig_S1.pdf", plot = Fig_S1, device = "pdf", path = "Results/Figures",
-       width = 12.50, height = 6.75, units = "in")
+# ggsave("Fig_S1.pdf", plot = Fig_S1, device = "pdf", path = "Results/Figures",
+#        width = 12.50, height = 6.75, units = "in")
 Fig_S1
 #generates Fig_S1.pdf in Results/Figures folder
 
@@ -337,8 +337,8 @@ p4 <- ggplot() +
   )
 Fig_S2 <- p3|p4
 
-ggsave("Fig_S2.pdf", plot = Fig_S2, device = "pdf", path = "Results/Figures",
-       width = 7, height = 4.25, units = "in")
+# ggsave("Fig_S2.pdf", plot = Fig_S2, device = "pdf", path = "Results/Figures",
+#        width = 7, height = 4.25, units = "in")
 Fig_S2
 #generates Fig_S2.pdf in Results/Figures folder
 
@@ -413,8 +413,8 @@ Fig_S3 <- ggplot(df, aes(x=expr, y=time, fill = expr)) +
         axis.title.y = element_text(size = 14),
         axis.text.x = element_text(size = 12, face = "bold"))
 
-ggsave("Fig_S3.pdf", plot = Fig_S3, device = "pdf", path = "Results/Figures",
-       width = 5.76, height = 4.20, units = "in")
+# ggsave("Fig_S3.pdf", plot = Fig_S3, device = "pdf", path = "Results/Figures",
+#        width = 5.76, height = 4.20, units = "in")
 Fig_S3
 #generates Fig_S3.pdf in Results/Figures folder
 
@@ -496,8 +496,8 @@ ggplot_pca_pred <- ggplot(pca_df_pred, aes(x = PC1, y = PC2,
   theme(plot.title = element_text(face = "bold"))
 Fig_4 <- ggplot_pca | ggplot_pca_pred 
 
-ggsave("Fig_4.pdf", plot = Fig_4, device = "pdf", path = "Results/Figures",
-       width = 8.75, height = 5, units = "in")
+# ggsave("Fig_4.pdf", plot = Fig_4, device = "pdf", path = "Results/Figures",
+#        width = 8.75, height = 5, units = "in")
 Fig_4
 #generates Fig_4.pdf in Results/Figures folder
 
@@ -549,8 +549,8 @@ Fig_5 <- ggplot(pca_df_pred4, aes(x = PC1, y = PC2,
   scale_shape_manual(values = c(16,17,15,18)) +
   theme(plot.title = element_text(face = "bold"))
 
-ggsave("Fig_5.pdf", plot = Fig_5, device = "pdf", path = "Results/Figures",
-       width = 5.76, height = 4.20, units = "in")
+# ggsave("Fig_5.pdf", plot = Fig_5, device = "pdf", path = "Results/Figures",
+#        width = 5.76, height = 4.20, units = "in")
 Fig_5
 #generates Fig_5.pdf in Results/Figures folder
 
@@ -651,14 +651,15 @@ Fig_6 <- draw(ht, column_title = "Sparse DPMM clusters",
      column_title_side = "bottom",
      column_title_gp = gpar(fontsize = 18, fontface = "bold"))
 
-pdf("Results/Figures/Fig_6.pdf", width = 11.75, height = 7.50)
-dev.off()
+# pdf("Results/Figures/Fig_6.pdf", width = 11.75, height = 7.50)
+# dev.off()
 
 #generates Fig_6.pdf in Results/Figures folder
 
 
 ##comparison with s.o.t.a techniques 
 X <- dist(Y3)
+X0 <- prcomp(Y3, rank. = 10)$x
 sil_width_kmeans <- c()
 sil_width_dbscan <- rep(0, 9)
 sil_width_hdbscan <- rep(0, 9)
@@ -683,7 +684,10 @@ for(k in 1:9){
   eps_curvature <- kdist_sorted[knee_idx]
   cl_dbscan <- dbscan(Y3, eps = eps_curvature, minPts = (k0+1))$cluster
   sil1 <- silhouette(cl_dbscan, X)
-  sil_width_dbscan[k] <- mean(sil1[, 3]) 
+  if (length(sil1)==1&all(is.na(sil1))){
+    sil_width_dbscan[k] <- NA
+  } else {sil_width_dbscan[k] <- mean(sil1[, 3])}
+   
   
   #hdbscan
   cl_hdbscan <- hdbscan(Y3, minPts = k0)$cluster
@@ -718,9 +722,9 @@ for(k in 1:9){
 algo_names <- c("DBSCAN", "HDBSCAN", "sNNclust", "HDDC (random)", "HDDC (k-means)", 
                 "Leiden", "K-means")
 opt_k <- rep(0, 7)
-opt_k[1] <- which.max(dbcv_dbscan) + 1
-opt_k[2] <- which.max(dbcv_hdbscan) + 1
-opt_k[3] <- which.max(dbcv_sNNclust) + 1
+opt_k[1] <- which.max(sil_width_dbscan) + 1
+opt_k[2] <- which.max(sil_width_hdbscan) + 1
+opt_k[3] <- which.max(sil_width_sNNclust) + 1
 opt_k[4] <- which.max(bic_hddc) + 1
 opt_k[5] <- which.max(bic_hddc_kmeans) + 1
 opt_k[6] <- which.max(mod_leiden) + 1
@@ -730,6 +734,7 @@ opt_k[7] <- which.max(sil_width_kmeans) + 1
 tab_S1 <- data.frame(algo_names, opt_k)
 names(tab_S1) <- c("Clustering method", "k_opt")
 # write.csv(tab_S1, file="Results/Tables/tab_S1.csv")
+View(tab_S1)
 
 #these provide the optimal k corresponding to every method 
 #(Supplementary Table S1), which is used to evaluate the Leukemia data, 
@@ -970,7 +975,12 @@ Fig_7 <- inset_grid / p0 +
     )
   )
 
-ggsave("Fig_7.pdf", plot = Fig_7, device = "pdf", path = "Results/Figures",
-       width = 12, height = 7.75, units = "in")
+# ggsave("Fig_7.pdf", plot = Fig_7, device = "pdf", path = "Results/Figures",
+#        width = 12, height = 7.75, units = "in")
 Fig_7
 #generates Fig_7.pdf in Results/Figures folder
+
+#sessionInfo
+S <- sessionInfo()
+# cat(capture.output(sessionInfo()), file = "sessionInfo.txt", sep = "\n")
+S
