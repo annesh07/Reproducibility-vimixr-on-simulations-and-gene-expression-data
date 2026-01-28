@@ -1,29 +1,27 @@
 #install required packages
 packages <- c("vimixr", "MetBrewer", "patchwork", "mclust", "readxl", 
               "dplyr", "ggplot2", "tidyr", "scales", "NPflow", "colorspace", 
-              "readr", "BiocManager", "viridis", "circlize", 
+              "readr", "viridis", "circlize", "rlang", "gridtext",
               "grid", "gridExtra", "dbscan", "HDclassif", "FNN", "cluster", 
-              "reticulate")
+              "reticulate", "igraph")
 
 for (p in packages) {
   if (!requireNamespace(p, quietly = TRUE)) {
     install.packages(p)
   }
+}
+for (p in packages){
   library(p, character.only = TRUE)
 }
+
 #install biomaRt and ComplexHeatmap
-BiocManager::install("biomaRt")
-BiocManager::install("ComplexHeatmap")
+if (!require("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install(ask = FALSE)
+BiocManager::install("biomaRt", ask = FALSE, force = TRUE)
+BiocManager::install("ComplexHeatmap", ask = FALSE, force = TRUE)
 library(biomaRt)
 library(ComplexHeatmap)
-#install python packages for Leiden
-install_python(version = "3.10")
-py_install(c("igraph", "leidenalg"))
-install.packages("igraph")
-install.packages("leiden")
-library(igraph)
-library(leiden)
-
 
 ##fig 1
 #results from Curta Cluster 
@@ -82,8 +80,11 @@ p2 <- ggplot(df_long, aes(x = Model, y = Value, color = Model)) +
         axis.title.y = element_text(size = 12),
         panel.grid.major.x = element_blank(),   
         panel.grid.minor.x = element_blank())
-p_1 <- p1|p2
+Fig_1 <- p1|p2
 
+ggsave("Fig_1.pdf", plot = Fig_1, device = "pdf", path = "Results/Figures",
+       width = 5.76, height = 4.20, units = "in")
+Fig_1
 #generates Fig_1.pdf in Results/Figures folder
 
 
@@ -131,13 +132,12 @@ long_df <- pivot_longer(combined_df,
 
 my_cols <- c(met.brewer("Signac")[13],met.brewer("Signac")[12],met.brewer("Signac")[11])
 
-p_2 <- ggplot(long_df, aes(x = Source, y = Value, color = Model)) +
+Fig_2 <- ggplot(long_df, aes(x = Source, y = Value, color = Model)) +
   geom_boxplot(fill = "grey88",position = position_dodge(0.8), width = 0.7) +
   theme_minimal() +
   labs(title = "ARI boxplots for cluster-specific models",
        x = " ",
-       y = "ARI",
-       fill = "Model") +
+       y = "ARI") +
   scale_fill_manual(values = my_cols) +
   scale_color_manual(values = my_cols) +
   scale_x_discrete(labels = c(expression(K[true]==4), expression(K[true]==6),
@@ -152,6 +152,9 @@ p_2 <- ggplot(long_df, aes(x = Source, y = Value, color = Model)) +
         panel.grid.major.x = element_blank(),   
         panel.grid.minor.x = element_blank())
 
+ggsave("Fig_2.pdf", plot = Fig_2, device = "pdf", path = "Results/Figures",
+       width = 5.76, height = 4.20, units = "in")
+Fig_2
 #generates Fig_2.pdf in Results/Figures folder
 
 
@@ -200,9 +203,11 @@ p2 <- ggplot(dfk0, aes(x = x, y = y, color = as.factor(Cluster))) +
         panel.grid.major.x = element_blank(),   
         panel.grid.minor.x = element_blank()) +
   scale_color_manual(values = my_col2)
+Fig_3 <- p1|p2
 
-p_3 <- p1|p2
-
+ggsave("Fig_3.pdf", plot = Fig_3, device = "pdf", path = "Results/Figures",
+       width = 10, height = 5.5, units = "in")
+Fig_3
 #generates Fig_3.pdf in Results/Figures folder
 
 
@@ -248,8 +253,11 @@ p2 <- ggplot(df, aes(x = as.factor(Cluster), y = VLL, color = as.factor(Cluster)
         panel.grid.major.x = element_blank(),   
         panel.grid.minor.x = element_blank()) +
   scale_color_manual(values = my_col2)
-p_S1 <- p1|p2
+Fig_S1 <- p1|p2
 
+ggsave("Fig_S1.pdf", plot = Fig_S1, device = "pdf", path = "Results/Figures",
+       width = 12.50, height = 6.75, units = "in")
+Fig_S1
 #generates Fig_S1.pdf in Results/Figures folder
 
 
@@ -278,13 +286,13 @@ approx_scientific <- function(x){
   gsub("\\.0", "", sci)
 }
 sample <- seq(100, 1000, by = 100)
-z3 = sample^2
-dfn <- data.frame(x=z3, y=nvar)
-fitn <- lm(y~x, data = dfn)
+z3 = sample*log(sample)
+dfn <- data.frame(x=sample, y=nvar)
+fitn <- lm(y~x*log(x), data = dfn)
 
 pred_data <- data.frame(
-  x = z3,
-  y = predict(fitn, newdata = data.frame(x = z3))
+  x = sample,
+  y = predict(fitn, newdata = data.frame(x = sample))
 )
 
 p3 <- ggplot() +
@@ -292,8 +300,8 @@ p3 <- ggplot() +
             color = "steelblue", linewidth = 1) +
   geom_point(data = dfn, aes(x = x, y = y), 
              color = "red", size = 3, shape = 16) + 
-  ggtitle(expression("(a) Dependency on N ~ O(" * N^2 * ")")) +
-  labs(x = expression(N^2),
+  ggtitle("(a) Dependency on N ~ O(N*log(N))") +
+  labs(x = "Sample size N",
        y = "Time per iteration (seconds)"
   ) +
   theme_minimal() +
@@ -303,13 +311,13 @@ p3 <- ggplot() +
     axis.title = element_text(size = 9)
   )
 
-z4 <- sample^(2)*log(sample)
-dfd <- data.frame(x=z4, y=dvar)
-fitd <- lm(y~x, data = dfd)
+z4 <- sample*log(sample)*log(log(sample))
+dfd <- data.frame(x=sample, y=dvar)
+fitd <- lm(y~x*log(x)*log(log(x)), data = dfd)
 
 pred_data <- data.frame(
-  x = z4,
-  y = predict(fitd, newdata = data.frame(x = z4))
+  x = sample,
+  y = predict(fitd, newdata = data.frame(x = sample))
 )
 
 p4 <- ggplot() +
@@ -317,8 +325,8 @@ p4 <- ggplot() +
             color = "steelblue", linewidth = 1) +
   geom_point(data = dfd, aes(x = x, y = y), 
              color = "red", size = 3, shape = 16) +
-  ggtitle(expression("(b) Dependency on d ~ O(" * d^2 * "log(d))")) +
-  labs(x = expression(d^2 * "log(d)"),
+  ggtitle("(b) Dependency on d ~ O(d*log(d)*log(log(d)))") +
+  labs(x = "Dimension d",
        y = "Time per iteration (seconds)"
   ) +
   theme_minimal() +
@@ -327,8 +335,11 @@ p4 <- ggplot() +
     plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
     axis.title = element_text(size = 9)
   )
-p_S2 <- p3|p4
+Fig_S2 <- p3|p4
 
+ggsave("Fig_S2.pdf", plot = Fig_S2, device = "pdf", path = "Results/Figures",
+       width = 7, height = 4.25, units = "in")
+Fig_S2
 #generates Fig_S2.pdf in Results/Figures folder
 
 
@@ -384,7 +395,7 @@ violinplot = read.csv("Results/violinplot.csv")
 violinplot$time <- violinplot$time/1e+9
 df <- as.data.frame(violinplot)
 violin_col <- met.brewer("Hokusai2")[c(2,5)]
-p_S3 <- ggplot(df, aes(x=expr, y=time, fill = expr)) +
+Fig_S3 <- ggplot(df, aes(x=expr, y=time, fill = expr)) +
   geom_violin(trim=FALSE) +
   scale_y_log10(
     breaks = scales::log_breaks(base = 10),
@@ -402,6 +413,9 @@ p_S3 <- ggplot(df, aes(x=expr, y=time, fill = expr)) +
         axis.title.y = element_text(size = 14),
         axis.text.x = element_text(size = 12, face = "bold"))
 
+ggsave("Fig_S3.pdf", plot = Fig_S3, device = "pdf", path = "Results/Figures",
+       width = 5.76, height = 4.20, units = "in")
+Fig_S3
 #generates Fig_S3.pdf in Results/Figures folder
 
 
@@ -480,9 +494,11 @@ ggplot_pca_pred <- ggplot(pca_df_pred, aes(x = PC1, y = PC2,
   theme_minimal() +
   scale_color_manual(values = my_col_pca_pred)+ 
   theme(plot.title = element_text(face = "bold"))
+Fig_4 <- ggplot_pca | ggplot_pca_pred 
 
-p_4 <- ggplot_pca | ggplot_pca_pred 
-
+ggsave("Fig_4.pdf", plot = Fig_4, device = "pdf", path = "Results/Figures",
+       width = 8.75, height = 5, units = "in")
+Fig_4
 #generates Fig_4.pdf in Results/Figures folder
 
 
@@ -522,7 +538,7 @@ pca_df_pred4 <- data.frame("PC1" = pca$x[,1], "PC2" = pca$x[,2],
 my_col_pca_pred4 <- c(met.brewer("Signac")[4], met.brewer("VanGogh2")[4], 
                       met.brewer("Manet")[11], lighten(met.brewer("Klimt")[6], 
                                                        amount = 0.3))
-p_5 <- ggplot(pca_df_pred4, aes(x = PC1, y = PC2, 
+Fig_5 <- ggplot(pca_df_pred4, aes(x = PC1, y = PC2, 
                                              color = Cluster, shape = Cluster)) +
   geom_point(size = 3, alpha = 0.9) +
   labs(title = "PCA projection: Sparse DPMM clusters", 
@@ -533,6 +549,9 @@ p_5 <- ggplot(pca_df_pred4, aes(x = PC1, y = PC2,
   scale_shape_manual(values = c(16,17,15,18)) +
   theme(plot.title = element_text(face = "bold"))
 
+ggsave("Fig_5.pdf", plot = Fig_5, device = "pdf", path = "Results/Figures",
+       width = 5.76, height = 4.20, units = "in")
+Fig_5
 #generates Fig_5.pdf in Results/Figures folder
 
 
@@ -628,67 +647,72 @@ ht <- Heatmap(d_ALL, name = "Expression level",
               )
 )
 
-p_6 <- draw(ht, column_title = "Sparse DPMM clusters",
+Fig_6 <- draw(ht, column_title = "Sparse DPMM clusters",
      column_title_side = "bottom",
      column_title_gp = gpar(fontsize = 18, fontface = "bold"))
+
+pdf("Results/Figures/Fig_6.pdf", width = 11.75, height = 7.50)
+dev.off()
 
 #generates Fig_6.pdf in Results/Figures folder
 
 
 ##comparison with s.o.t.a techniques 
-#packages for implementation on the Leukemia data Y3
-X = Y3
+X <- dist(Y3)
 sil_width_kmeans <- c()
-dbcv_dbscan <- rep(0, 9)
-dbcv_hdbscan <- rep(0, 9)
-dbcv_sNNclust <- rep(0, 9)
+sil_width_dbscan <- rep(0, 9)
+sil_width_hdbscan <- rep(0, 9)
+sil_width_sNNclust <- rep(0, 9)
 bic_hddc <- rep(0, 9)
 bic_hddc_kmeans <- rep(0, 9)
 mod_leiden <- rep(0, 9)
+
 set.seed(05122005)
 for(k in 1:9){
   k0 <- k + 1
   #Silhouette coeff. for k-means
   km <- kmeans(Y3, centers = k0, nstart = 1)
-  sil <- silhouette(km$cluster, dist(Y3))
+  sil <- silhouette(km$cluster, X)
   sil_width_kmeans[k] <- mean(sil[, 3])
   
   #dbscan
-  kdist <- kNNdist(prcomp(X, rank. = 10)$x, k = k0)      
+  kdist <- kNNdist(Y3, k = k0)
   kdist_sorted <- sort(kdist, decreasing = FALSE)
-  curv <- c(0, abs(diff(kdist_sorted, differences = 2)), 0)   
+  curv <- c(0, abs(diff(kdist_sorted, differences = 2)), 0)
   knee_idx <- which.max(curv)
   eps_curvature <- kdist_sorted[knee_idx]
-  cl_dbscan <- dbscan(prcomp(X, rank. = 10)$x, eps = eps_curvature, minPts = (k+1))$cluster
-  dbcv_dbscan[k] <- dbcv(prcomp(X, rank. = 10)$x, cl_dbscan)$score
+  cl_dbscan <- dbscan(Y3, eps = eps_curvature, minPts = (k0+1))$cluster
+  sil1 <- silhouette(cl_dbscan, X)
+  sil_width_dbscan[k] <- mean(sil1[, 3]) 
   
   #hdbscan
-  cl_hdbscan <- hdbscan(X, minPts = k0)$cluster
-  dbcv_hdbscan[k] <- dbcv(prcomp(X, rank. = 10)$x, cl_hdbscan)$score
+  cl_hdbscan <- hdbscan(Y3, minPts = k0)$cluster
+  sil2 <- silhouette(cl_hdbscan, X)
+  sil_width_hdbscan[k] <- mean(sil2[, 3]) 
   
   #sNNclust
-  snn_mat <- sNN(prcomp(X, rank. = 10)$x, k = k0)$shared
-  eps <- floor(k/2)
-  cl_sNNclust <- sNNclust(X, k=k0, eps=eps, minPts=eps+1, borderPoints = T)$cluster #same issues
-  dbcv_sNNclust[k] <- dbcv(prcomp(X, rank. = 10)$x, cl_sNNclust)$score
+  snn_mat <- sNN(Y3, k = k0)$shared
+  eps <- floor(k0/2)
+  cl_sNNclust <- sNNclust(Y3, k=k0, eps=eps, minPts=eps+1, borderPoints = T)$cluster 
+  sil3 <- silhouette(cl_sNNclust, X)
+  sil_width_sNNclust[k] <- mean(sil3[, 3])
   
   #hddc
-  r_hddc <- hddc(X, K = k0, model="ALL", init = "random")
+  r_hddc <- hddc(Y3, K = k0, model="ALL", init = "random")
   bic_hddc[k] <- r_hddc$BIC
   
-  r_hddc_kmeans <- hddc(X, K=k0, model="ALL", init = "kmeans")
+  r_hddc_kmeans <- hddc(Y3, K=k0, model="ALL", init = "kmeans")
   bic_hddc_kmeans[k] <- r_hddc_kmeans$BIC
   
   #Leiden, modularity based k selection
-  knn_res <- get.knn(X, k = k0)
+  knn_res <- get.knn(Y3, k = k0)
   edges <- cbind(
-    rep(1:nrow(X), each = k0),
+    rep(1:nrow(Y3), each = k0),
     as.vector(t(knn_res$nn.index))
   )
   g <- graph_from_edgelist(edges, directed = FALSE)
   g <- simplify(g)
-  cl_leiden <- leiden(g, resolution_parameter = 1.0)
-  mod_leiden[k] <- modularity(g, cl_leiden)
+  mod_leiden[k] <- cluster_leiden(g, objective_function = "modularity")$quality
 }
 
 algo_names <- c("DBSCAN", "HDBSCAN", "sNNclust", "HDDC (random)", "HDDC (k-means)", 
@@ -721,12 +745,12 @@ iteration_models <- rep(0 , 8)
 set.seed(05122005)
 t0 <- as.numeric(Sys.time())
 k=opt_k[1]
-kdist <- kNNdist(X, k = k)      # returns N values (distance to k-th NN)
+kdist <- kNNdist(Y3, k = k)      
 kdist_sorted <- sort(kdist, decreasing = FALSE)
-curv <- c(0, abs(diff(kdist_sorted, differences = 2)), 0)   # discrete approx of 2nd deriv
+curv <- c(0, abs(diff(kdist_sorted, differences = 2)), 0)   
 knee_idx <- which.max(curv)
 eps_curvature <- kdist_sorted[knee_idx]
-cl_dbscan <- dbscan(X, eps = eps_curvature, minPts = k+1)$cluster
+cl_dbscan <- dbscan(Y3, eps = eps_curvature, minPts = k+1)$cluster
 t1 <- as.numeric(Sys.time())
 cl_models[1] <- length(unique(cl_dbscan))
 time_models[1] <- t1 - t0
@@ -737,7 +761,7 @@ ari_models[1] <- mclust::adjustedRandIndex(tag1, cl_dbscan)
 set.seed(05122005)
 t0 <- as.numeric(Sys.time())
 k=opt_k[2]
-cl_hdbscan <- hdbscan(X, minPts = k)$cluster
+cl_hdbscan <- hdbscan(Y3, minPts = k)$cluster
 t1 <- as.numeric(Sys.time())
 cl_models[2] <- length(unique(cl_hdbscan))
 time_models[2] <- t1 - t0
@@ -748,9 +772,9 @@ ari_models[2] <- mclust::adjustedRandIndex(tag1, cl_hdbscan)
 set.seed(05122005)
 t0 <- as.numeric(Sys.time())
 k=opt_k[3]
-snn_mat <- sNN(X, k = k)$shared
+snn_mat <- sNN(Y3, k = k)$shared
 eps <- floor(quantile(snn_mat, 0.9))
-cl_sNNclust <- sNNclust(X, k=k, eps=eps, minPts=eps+3, borderPoints = T)$cluster #same issues
+cl_sNNclust <- sNNclust(Y3, k=k, eps=eps, minPts=eps+3, borderPoints = T)$cluster 
 t1 <- as.numeric(Sys.time())
 cl_models[3] <- length(unique(cl_sNNclust))
 time_models[3] <- t1 - t0
@@ -760,9 +784,9 @@ ari_models[3] <- mclust::adjustedRandIndex(tag1, cl_sNNclust)
 #hddc
 set.seed(05122005)
 k=opt_k[4]
-cl_hddc_m <- hddc(X, K = k, model="ALL", init = "random")$model #best model
+cl_hddc_m <- hddc(Y3, K = k, model="ALL", init = "random")$model #best model
 t0 <- as.numeric(Sys.time())
-cl_hddc <- hddc(X, K = k, model=cl_hddc_m, init = "random")
+cl_hddc <- hddc(Y3, K = k, model=cl_hddc_m, init = "random")
 t1 <- as.numeric(Sys.time())
 cl_models[4] <- length(unique(cl_hddc$class))
 time_models[4] <- t1 - t0
@@ -771,9 +795,9 @@ ari_models[4] <- mclust::adjustedRandIndex(tag1, cl_hddc$class)
 
 set.seed(05122005)
 k=opt_k[5]
-cl_hddc_km <- hddc(X, K = k, model="ALL", init = "kmeans")$model #best model
+cl_hddc_km <- hddc(Y3, K = k, model="ALL", init = "kmeans")$model #best model
 t0 <- as.numeric(Sys.time())
-cl_hddc_kmeans <- hddc(X, K = k, model="ABKQKD", init = "kmeans")
+cl_hddc_kmeans <- hddc(Y3, K = k, model="ABKQKD", init = "kmeans")
 t1 <- as.numeric(Sys.time())
 cl_models[5] <- length(unique(cl_hddc_kmeans$class))
 time_models[5] <- t1 - t0
@@ -784,19 +808,19 @@ ari_models[5] <- mclust::adjustedRandIndex(tag1, cl_hddc_kmeans$class)
 set.seed(05122005)
 t0 <- as.numeric(Sys.time())
 k=opt_k[6]
-knn_res <- get.knn(X, k = k)
+knn_res <- get.knn(Y3, k = k)
 edges <- cbind(
-  rep(1:nrow(X), each = k),
+  rep(1:nrow(Y3), each = k),
   as.vector(t(knn_res$nn.index))
 )
 g <- graph_from_edgelist(edges, directed = FALSE)
 g <- simplify(g)
-cl_leiden <- leiden(g, resolution_parameter = 1.0)
+cl_leiden <- cluster_leiden(g, objective_function = "modularity")
 t1 <- as.numeric(Sys.time())
-cl_models[6] <- length(unique(cl_leiden))
+cl_models[6] <- cl_leiden$nb_clusters
 time_models[6] <- t1 - t0
 iteration_models[6] <- 2 #by default
-ari_models[6] <- mclust::adjustedRandIndex(tag1, cl_leiden)
+ari_models[6] <- mclust::adjustedRandIndex(tag1, cl_leiden$membership)
 
 #k-means
 set.seed(05122005)
@@ -934,7 +958,7 @@ p_ari <- ggplot(data, aes(x = algorithm, y = ari, fill = algorithm)) +
 p0 <- p_clusters | p_ari
 
 #final plot
-p_7 <- inset_grid / p0 + 
+Fig_7 <- inset_grid / p0 + 
   plot_layout(heights = c(1, 3)) +
   plot_annotation(
     title = "Benchmark of Clustering Techniques",
@@ -946,4 +970,7 @@ p_7 <- inset_grid / p0 +
     )
   )
 
+ggsave("Fig_7.pdf", plot = Fig_7, device = "pdf", path = "Results/Figures",
+       width = 12, height = 7.75, units = "in")
+Fig_7
 #generates Fig_7.pdf in Results/Figures folder
