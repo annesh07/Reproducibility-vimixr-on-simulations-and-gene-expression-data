@@ -158,58 +158,6 @@ Fig_2
 #generates Fig_2.pdf in Results/Figures folder
 
 
-##fig 3
-#results from Curta Cluster
-#for negative binomial simulations with fixed N = 100, D = 1000 and K = 3,
-#hyper-parameters a0=b0 and k0 are varied from 0.001 to 2000 for 1000 times
-#and corresponding VLL values calculated. Output are 3 columns, namely 
-#x = random a0=b0 (correspondingly k0) values, y = VLL value and 
-#Cluster = number of posterior clusters
-vlla0 <- read.csv("Results/VLL_diffa0b0_NB.csv")
-dfa0 <- data.frame(vlla0)
-
-vllk0 <- read.csv("Results/VLL_diffk0_NB.csv")
-dfk0 <- data.frame(vllk0)
-
-my_col1 <- met.brewer("Nizami")[c(1,2,6,8,5)]
-p1 <- ggplot(dfa0, aes(x = x, y = y, color = as.factor(Cluster))) +
-  geom_point(size = 3, alpha = 0.9) +
-  ggtitle("(a) VLL values for random initialisations") +
-  theme_minimal() +
-  labs(x = expression(a[0] == b[0] %in% "(" * 0.001 * ", " * 2000 * ")"),
-       y = "VLL",
-       colour = expression(K[post])) +
-  theme(plot.title = element_text(size = 18, face = "bold", hjust = 0.5),  
-        axis.title.x = element_text(size = 16, hjust = 0.5),
-        axis.title.y = element_text(size = 16, face = "bold"),
-        legend.title = element_text(size = 14),             
-        legend.text  = element_text(size = 14),
-        panel.grid.major.x = element_blank(),   
-        panel.grid.minor.x = element_blank()) +
-  scale_color_manual(values = my_col1)
-
-my_col2 <- met.brewer("Nizami")[c(1,2,6)]
-p2 <- ggplot(dfk0, aes(x = x, y = y, color = as.factor(Cluster))) +
-  geom_point(size = 3, alpha = 0.8) +
-  ggtitle("(b) VLL values for random initialisations") +
-  theme_minimal() +
-  labs(x = expression(k[0] %in% "(" * 0.001 * ", " * 2000 * ")"),
-       y = "",
-       colour = expression(K[post])) +
-  theme(plot.title = element_text(size = 18, face = "bold", hjust = 0.5),  
-        axis.title.x = element_text(size = 16, hjust = 0.5),             
-        legend.title = element_text(size = 14),             
-        legend.text  = element_text(size = 14),
-        panel.grid.major.x = element_blank(),   
-        panel.grid.minor.x = element_blank()) +
-  scale_color_manual(values = my_col2)
-Fig_3 <- p1|p2
-
-# ggsave("Fig_3.pdf", plot = Fig_3, device = "pdf", path = "Results/Figures",
-#        width = 10, height = 5.5, units = "in")
-Fig_3
-#generates Fig_3.pdf in Results/Figures folder
-
 
 ##fig Supplementary 1
 #results from Curta Cluster
@@ -262,6 +210,59 @@ Fig_S1
 
 
 ##fig Supplementary 2
+#results from Curta Cluster
+#for negative binomial simulations with fixed N = 100, D = 1000 and K = 3,
+#hyper-parameters a0=b0 and k0 are varied from 0.001 to 2000 for 1000 times
+#and corresponding VLL values calculated. Output are 3 columns, namely 
+#x = random a0=b0 (correspondingly k0) values, y = VLL value and 
+#Cluster = number of posterior clusters
+vlla0 <- read.csv("Results/VLL_diffa0b0_NB.csv")
+dfa0 <- data.frame(vlla0)
+
+vllk0 <- read.csv("Results/VLL_diffk0_NB.csv")
+dfk0 <- data.frame(vllk0)
+
+my_col1 <- met.brewer("Nizami")[c(1,2,6,8,5)]
+p1 <- ggplot(dfa0, aes(x = x, y = y, color = as.factor(Cluster))) +
+  geom_point(size = 3, alpha = 0.9) +
+  ggtitle("(a) VLL values for random initialisations") +
+  theme_minimal() +
+  labs(x = expression(a[0] == b[0] %in% "(" * 0.001 * ", " * 2000 * ")"),
+       y = "VLL",
+       colour = expression(K[post])) +
+  theme(plot.title = element_text(size = 18, face = "bold", hjust = 0.5),  
+        axis.title.x = element_text(size = 16, hjust = 0.5),
+        axis.title.y = element_text(size = 16, face = "bold"),
+        legend.title = element_text(size = 14),             
+        legend.text  = element_text(size = 14),
+        panel.grid.major.x = element_blank(),   
+        panel.grid.minor.x = element_blank()) +
+  scale_color_manual(values = my_col1)
+
+my_col2 <- met.brewer("Nizami")[c(1,2,6)]
+p2 <- ggplot(dfk0, aes(x = x, y = y, color = as.factor(Cluster))) +
+  geom_point(size = 3, alpha = 0.8) +
+  ggtitle("(b) VLL values for random initialisations") +
+  theme_minimal() +
+  labs(x = expression(k[0] %in% "(" * 0.001 * ", " * 2000 * ")"),
+       y = "",
+       colour = expression(K[post])) +
+  theme(plot.title = element_text(size = 18, face = "bold", hjust = 0.5),  
+        axis.title.x = element_text(size = 16, hjust = 0.5),             
+        legend.title = element_text(size = 14),             
+        legend.text  = element_text(size = 14),
+        panel.grid.major.x = element_blank(),   
+        panel.grid.minor.x = element_blank()) +
+  scale_color_manual(values = my_col2)
+Fig_S2 <- p1|p2
+
+# ggsave("Fig_S2.pdf", plot = Fig_3, device = "pdf", path = "Results/Figures",
+#        width = 10, height = 5.5, units = "in")
+Fig_S2
+#generates Fig_S2.pdf in Results/Figures folder
+
+
+##fig Supplementary 3
 #processed results from Curta Cluster
 #mean average run time of Sparse DPMM calculated by taking the sample average
 #of 100 simulation runs for different N, values can be found in 
@@ -335,15 +336,15 @@ p4 <- ggplot() +
     plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
     axis.title = element_text(size = 9)
   )
-Fig_S2 <- p3|p4
+Fig_S3 <- p3|p4
 
-# ggsave("Fig_S2.pdf", plot = Fig_S2, device = "pdf", path = "Results/Figures",
+# ggsave("Fig_S3.pdf", plot = Fig_S2, device = "pdf", path = "Results/Figures",
 #        width = 7, height = 4.25, units = "in")
-Fig_S2
-#generates Fig_S2.pdf in Results/Figures folder
+Fig_S3
+#generates Fig_S3.pdf in Results/Figures folder
 
 
-##fig Supplementary 3
+##fig Supplementary 4
 #comparison between vimixr and an MCMC splice sampling technique, 
 #implemented using DPMGibbsN function from NPflow package; due to time taken
 #for microbenching, the results are provided as violinplot.csv
@@ -395,7 +396,7 @@ violinplot = read.csv("Results/violinplot.csv")
 violinplot$time <- violinplot$time/1e+9
 df <- as.data.frame(violinplot)
 violin_col <- met.brewer("Hokusai2")[c(2,5)]
-Fig_S3 <- ggplot(df, aes(x=expr, y=time, fill = expr)) +
+Fig_S4 <- ggplot(df, aes(x=expr, y=time, fill = expr)) +
   geom_violin(trim=FALSE) +
   scale_y_log10(
     breaks = scales::log_breaks(base = 10),
@@ -413,10 +414,10 @@ Fig_S3 <- ggplot(df, aes(x=expr, y=time, fill = expr)) +
         axis.title.y = element_text(size = 14),
         axis.text.x = element_text(size = 12, face = "bold"))
 
-# ggsave("Fig_S3.pdf", plot = Fig_S3, device = "pdf", path = "Results/Figures",
+# ggsave("Fig_S4.pdf", plot = Fig_S3, device = "pdf", path = "Results/Figures",
 #        width = 5.76, height = 4.20, units = "in")
-Fig_S3
-#generates Fig_S3.pdf in Results/Figures folder
+Fig_S4
+#generates Fig_S4.pdf in Results/Figures folder
 
 
 #Leukemia data implementation
@@ -429,7 +430,7 @@ Y3 <- t(apply(log2(Y), 1, FUN = function(x){(x-mean(x))/sqrt(var(x))}))
 #labelled Leukemia subtypes
 tag1 <- as.character(data1[1, 2:73])
 
-##fig 4
+##fig 3
 #code for implementation with empirical Bayes hyper-parameters
 # R0 <- vimixr::cvi_npmm(Y3, variational_params = 20, prior_shape_alpha = 0.001, 
 #                          prior_rate_alpha = 0.001, post_shape_alpha = 0.001, 
@@ -494,15 +495,15 @@ ggplot_pca_pred <- ggplot(pca_df_pred, aes(x = PC1, y = PC2,
   theme_minimal() +
   scale_color_manual(values = my_col_pca_pred)+ 
   theme(plot.title = element_text(face = "bold"))
-Fig_4 <- ggplot_pca | ggplot_pca_pred 
+Fig_3 <- ggplot_pca | ggplot_pca_pred 
 
-# ggsave("Fig_4.pdf", plot = Fig_4, device = "pdf", path = "Results/Figures",
+# ggsave("Fig_3.pdf", plot = Fig_4, device = "pdf", path = "Results/Figures",
 #        width = 8.75, height = 5, units = "in")
-Fig_4
-#generates Fig_4.pdf in Results/Figures folder
+Fig_3
+#generates Fig_3.pdf in Results/Figures folder
 
 
-#fig 5
+#fig 4a
 #code for implementation with empirical Bayes hyper-parameters
 # R0 <- vimixr::cvi_npmm(Y3, variational_params = 20, prior_shape_alpha = 0.001, 
 #                          prior_rate_alpha = 0.001, post_shape_alpha = 0.001, 
@@ -538,7 +539,7 @@ pca_df_pred4 <- data.frame("PC1" = pca$x[,1], "PC2" = pca$x[,2],
 my_col_pca_pred4 <- c(met.brewer("Signac")[4], met.brewer("VanGogh2")[4], 
                       met.brewer("Manet")[11], lighten(met.brewer("Klimt")[6], 
                                                        amount = 0.3))
-Fig_5 <- ggplot(pca_df_pred4, aes(x = PC1, y = PC2, 
+Fig_4a <- ggplot(pca_df_pred4, aes(x = PC1, y = PC2, 
                                              color = Cluster, shape = Cluster)) +
   geom_point(size = 3, alpha = 0.9) +
   labs(title = "PCA projection: Sparse DPMM clusters", 
@@ -549,13 +550,13 @@ Fig_5 <- ggplot(pca_df_pred4, aes(x = PC1, y = PC2,
   scale_shape_manual(values = c(16,17,15,18)) +
   theme(plot.title = element_text(face = "bold"))
 
-# ggsave("Fig_5.pdf", plot = Fig_5, device = "pdf", path = "Results/Figures",
+# ggsave("Fig_4a.pdf", plot = Fig_5, device = "pdf", path = "Results/Figures",
 #        width = 5.76, height = 4.20, units = "in")
-Fig_5
-#generates Fig_5.pdf in Results/Figures folder
+Fig_4a
+#generates Fig_4a.pdf in Results/Figures folder
 
 
-##fig 6
+##fig 4b
 #using BIOCONDUCTR for full signature of labelled sub-types as per Armstrong 
 #and comparing those signatures for the estimated clusters with weaker 
 #hyper-priors ,i.e., pred4
@@ -647,14 +648,14 @@ ht <- Heatmap(d_ALL, name = "Expression level",
               )
 )
 
-Fig_6 <- draw(ht, column_title = "Sparse DPMM clusters",
+Fig_4b <- draw(ht, column_title = "Sparse DPMM clusters",
      column_title_side = "bottom",
      column_title_gp = gpar(fontsize = 18, fontface = "bold"))
 
-# pdf("Results/Figures/Fig_6.pdf", width = 11.75, height = 7.50)
+# pdf("Results/Figures/Fig_4b.pdf", width = 11.75, height = 7.50)
 # dev.off()
 
-#generates Fig_6.pdf in Results/Figures folder
+#generates Fig_4b.pdf in Results/Figures folder
 
 
 ##comparison with s.o.t.a techniques 
@@ -838,7 +839,7 @@ time_models[7] <- t1 - t0
 iteration_models[7] <- Km$iter
 ari_models[7] <- mclust::adjustedRandIndex(tag1, Km$cluster)
 
-##fig 7
+##fig 5
 #comparison plots based on average run-time, number of posterior clusters 
 #and ARI scores; the metrics values used based on the above results and 
 #pred output (for Sparse DPMM, implementation below)
@@ -963,7 +964,7 @@ p_ari <- ggplot(data, aes(x = algorithm, y = ari, fill = algorithm)) +
 p0 <- p_clusters | p_ari
 
 #final plot
-Fig_7 <- inset_grid / p0 + 
+Fig_5 <- inset_grid / p0 + 
   plot_layout(heights = c(1, 3)) +
   plot_annotation(
     title = "Benchmark of Clustering Techniques",
@@ -975,10 +976,10 @@ Fig_7 <- inset_grid / p0 +
     )
   )
 
-# ggsave("Fig_7.pdf", plot = Fig_7, device = "pdf", path = "Results/Figures",
+# ggsave("Fig_5.pdf", plot = Fig_7, device = "pdf", path = "Results/Figures",
 #        width = 12, height = 7.75, units = "in")
-Fig_7
-#generates Fig_7.pdf in Results/Figures folder
+Fig_5
+#generates Fig_5.pdf in Results/Figures folder
 
 #sessionInfo
 S <- sessionInfo()
