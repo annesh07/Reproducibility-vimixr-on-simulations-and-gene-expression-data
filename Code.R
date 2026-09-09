@@ -225,14 +225,13 @@ dfk0 <- data.frame(vllk0)
 my_col1 <- met.brewer("Nizami")[c(1,2,6,8,5)]
 p1 <- ggplot(dfa0, aes(x = x, y = y, color = as.factor(Cluster))) +
   geom_point(size = 3, alpha = 0.9) +
-  ggtitle("(a) VLL values for random initialisations") +
   theme_minimal() +
-  labs(x = expression(a[0] == b[0] %in% "(" * 0.001 * ", " * 2000 * ")"),
-       y = "VLL",
+  labs(x = expression("(a) " *a[0] == b[0] %in% "(" * 0.001 * ", " * 2000 * ")"),
+       y = "Variational Log Likelihood (VLL)",
        colour = expression(K[post])) +
   theme(plot.title = element_text(size = 18, face = "bold", hjust = 0.5),  
         axis.title.x = element_text(size = 16, hjust = 0.5),
-        axis.title.y = element_text(size = 16, face = "bold"),
+        axis.title.y = element_text(size = 14, face = "bold"),
         legend.title = element_text(size = 14),             
         legend.text  = element_text(size = 14),
         panel.grid.major.x = element_blank(),   
@@ -242,9 +241,8 @@ p1 <- ggplot(dfa0, aes(x = x, y = y, color = as.factor(Cluster))) +
 my_col2 <- met.brewer("Nizami")[c(1,2,6)]
 p2 <- ggplot(dfk0, aes(x = x, y = y, color = as.factor(Cluster))) +
   geom_point(size = 3, alpha = 0.8) +
-  ggtitle("(b) VLL values for random initialisations") +
   theme_minimal() +
-  labs(x = expression(k[0] %in% "(" * 0.001 * ", " * 2000 * ")"),
+  labs(x = expression("(b) " *k[0] %in% "(" * 0.001 * ", " * 2000 * ")"),
        y = "",
        colour = expression(K[post])) +
   theme(plot.title = element_text(size = 18, face = "bold", hjust = 0.5),  
@@ -257,7 +255,7 @@ p2 <- ggplot(dfk0, aes(x = x, y = y, color = as.factor(Cluster))) +
 Fig_S2 <- p1|p2
 
 # ggsave("Fig_S2.pdf", plot = Fig_3, device = "pdf", path = "Results/Figures",
-#        width = 10, height = 5.5, units = "in")
+#        width = 8.75, height = 5.0, units = "in")
 Fig_S2
 #generates Fig_S2.pdf in Results/Figures folder
 
@@ -269,76 +267,97 @@ Fig_S2
 #varied_csSparse_N.xlsx at B102 cell of each sheet in every 10 sheets corresponding
 #to 10 sample size N; similar results for comparing speed across dimension D
 #in varied_csSparse_D.xlsx
-nvar <- c(0.020044444, 0.040899069, 0.077419278, 0.129530247, 0.203332588, 0.295528986,
-          0.404437847, 0.515663789, 0.647167268, 0.793512615)
-x_labels <- paste0("logN=", log(seq(100, 1000, by = 100)))
 
-dfn <- data.frame(x = factor(x_labels, levels = x_labels), y = nvar)
+sample_sizes <- seq(100, 1000, by = 100)
+dimensions   <- seq(100, 1000, by = 100)
 
-dvar <- c(0.125384755, 0.264401174, 0.455557301, 0.725416741, 1.053048879, 
-          1.42245983, 1.936332004, 2.483592489, 3.426378726, 4.571037774)
-x_labels <- paste0("d=", seq(100, 1000, by = 100))
-dfd <- data.frame(x = factor(x_labels, levels = x_labels), y = dvar)
-
-#linear-dependencies
-approx_scientific <- function(x){
-  rounded <- round(x)
-  sci <- format(rounded, scientific = TRUE, trim = TRUE)
-  gsub("\\.0", "", sci)
+read_raw <- function(path, sizes, col_name) {
+  sheets <- excel_sheets(path)          
+  stopifnot(length(sheets) >= length(sizes))
+  
+  purrr::map2_dfr(sheets[seq_along(sizes)], sizes, function(sh, sz) {
+    df <- read_excel(path, sheet = sh)
+    tibble(
+      size    = sz,
+      runtime = df[[col_name]][1:100]   
+    )
+  })
 }
-sample <- seq(100, 1000, by = 100)
-z3 = sample*log(sample)
-dfn <- data.frame(x=sample, y=nvar)
-fitn <- lm(y~x*log(x), data = dfn)
 
-pred_data <- data.frame(
-  x = sample,
-  y = predict(fitn, newdata = data.frame(x = sample))
-)
+raw_n <- read_raw("Results/varied_csSparse_N.xlsx", sample_sizes, col_name = "Avg. Time")
+raw_d <- read_raw("Results/varied_csSparse_D.xlsx", dimensions,   col_name = "Avg. Time")
 
-p3 <- ggplot() +
-  geom_line(data = pred_data, aes(x = x, y = y), 
-            color = "steelblue", linewidth = 1) +
-  geom_point(data = dfn, aes(x = x, y = y), 
-             color = "red", size = 3, shape = 16) + 
-  ggtitle("(a) Dependency on N ~ O(N*log(N))") +
-  labs(x = "Sample size N",
-       y = "Time per iteration (seconds)"
+raw_n <- raw_n |>
+  mutate(x_transformed = size^2 * log(size))
+
+raw_d <- raw_d |>
+  mutate(x_transformed = size^(3/2) * log(size)^3 * log(log(size))^4)
+
+extract_bp_medians <- function(raw_df) {
+  tmp <- ggplot(raw_df, aes(x = x_transformed, y = runtime, group = factor(size))) +
+    geom_boxplot()
+  bp_data <- ggplot_build(tmp)$data[[1]]
+  data.frame(
+    x_transformed = bp_data$x,   
+    median_rt     = bp_data$middle
+  )
+}
+
+med_n <- extract_bp_medians(raw_n)
+med_d <- extract_bp_medians(raw_d)
+
+fitn <- lm(median_rt ~ x_transformed, data = med_n)
+fitd <- lm(median_rt ~ x_transformed, data = med_d)
+
+pred_n <- make_pred(fitn, raw_n$x_transformed)
+pred_d <- make_pred(fitd, raw_d$x_transformed)
+
+p3 <- ggplot(raw_n, aes(x = x_transformed, y = runtime, group = factor(size))) +
+  geom_boxplot(
+    width         = diff(range(raw_n$x_transformed)) / 15,
+    fill          = "lightgrey",
+    colour        = "maroon",         
+    outlier.size  = 1,
+    outlier.alpha = 0.5
   ) +
-  theme_minimal() +
+  geom_line(
+    data   = pred_n,
+    aes(x = x, y = y, group = NULL),
+    colour = "darkblue", linewidth = 1
+  ) +
+  ggtitle("(a) Dependency on N ~ O(N² log N)") +
+  labs(x = expression(N^2 * log(N)), y = "Time per iteration (seconds)") +
   scale_x_continuous(labels = approx_scientific) +
+  theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
     axis.title = element_text(size = 9)
   )
 
-z4 <- sample*log(sample)*log(log(sample))
-dfd <- data.frame(x=sample, y=dvar)
-fitd <- lm(y~x*log(x)*log(log(x)), data = dfd)
-
-pred_data <- data.frame(
-  x = sample,
-  y = predict(fitd, newdata = data.frame(x = sample))
-)
-
-p4 <- ggplot() +
-  geom_line(data = pred_data, aes(x = x, y = y), 
-            color = "steelblue", linewidth = 1) +
-  geom_point(data = dfd, aes(x = x, y = y), 
-             color = "red", size = 3, shape = 16) +
-  ggtitle("(b) Dependency on d ~ O(d*log(d)*log(log(d)))") +
-  labs(x = "Dimension d",
-       y = "Time per iteration (seconds)"
+p4 <- ggplot(raw_d, aes(x = x_transformed, y = runtime, group = factor(size))) +
+  geom_boxplot(
+    width         = diff(range(raw_d$x_transformed)) / 15,
+    fill          = "lightgrey",
+    colour        = "maroon",
+    outlier.size  = 1,
+    outlier.alpha = 0.5
   ) +
-  theme_minimal() +
+  geom_line(
+    data   = pred_d,
+    aes(x = x, y = y, group = NULL),
+    colour = "darkblue", linewidth = 1
+  ) +
+  ggtitle("(b) Dependency on d ~ O(d^1.5 · log(d)³ · log(log(d))⁴)") +
+  labs(x = expression(d^1.5 * log(d)^3 * log(log(d))^4), y = "Time per iteration (seconds)") +
   scale_x_continuous(labels = approx_scientific) +
+  theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
     axis.title = element_text(size = 9)
   )
 Fig_S3 <- p3|p4
 
-# ggsave("Fig_S3.pdf", plot = Fig_S2, device = "pdf", path = "Results/Figures",
+# ggsave("Fig_S3.pdf", plot = Fig_S3, device = "pdf", path = "Results/Figures",
 #        width = 7, height = 4.25, units = "in")
 Fig_S3
 #generates Fig_S3.pdf in Results/Figures folder
@@ -372,12 +391,12 @@ N <- 1000
 nbclust_init <- 20
 # microbencmarking (commented code below) takes ~2-3 hours, so results
 # of microbenchmarking attached and used. The code for microbenchmarking results:
-# violinplot <- microbenchmark::microbenchmark(DPMGibbsN(t(X), hyperG0, a, b, N, doPlot = F), 
-#                                              vimixr::cvi_npmm(X, variational_params = T0, prior_shape_alpha = 0.001, 
-#                                                               prior_rate_alpha = 0.001, post_shape_alpha = 0.001, 
-#                                                               post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)), 
+# violinplot <- microbenchmark::microbenchmark(DPMGibbsN(t(X), hyperG0, a, b, N, doPlot = F),
+#                                              vimixr::cvi_npmm(X, variational_params = T0, prior_shape_alpha = 0.001,
+#                                                               prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
+#                                                               post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
 #                                                               post_mean_eta = matrix(0, T0, ncol(X)),
-#                                                               log_prob_matrix = Plog, 
+#                                                               log_prob_matrix = Plog,
 #                                                               maxit = 1000,
 #                                                               covariance_type="full",fixed_variance=FALSE,
 #                                                               cluster_specific_covariance = TRUE,
@@ -387,7 +406,7 @@ nbclust_init <- 20
 #                                                               prior_var_offd_cs_cov = 100000,
 #                                                               post_shape_d_cs_cov = matrix(0.001, 1, T0),
 #                                                               post_rate_d_cs_cov = matrix(0.001, T0, ncol(X)),
-#                                                               post_var_offd_cs_cov = array(0.001, c(ncol(X), ncol(X), T0)),
+#                                                               post_var_offd_cs_cov = matrix(0.001, T0, 3),
 #                                                               scaling_cov_eta = 1))
 # levels(violinplot$expr) <- c("DPMGibbsN", "Sparse DPMM")
 #available results
@@ -845,7 +864,7 @@ ari_models[7] <- mclust::adjustedRandIndex(tag1, Km$cluster)
 #pred output (for Sparse DPMM, implementation below)
 set.seed(05122005)
 M0 <- as.integer(Sys.time())
-R0 <- cvi_npmm(Y3, variational_params = 20, prior_shape_alpha = 0.001,
+R0 <- vimixr::cvi_npmm(Y3, variational_params = 20, prior_shape_alpha = 0.001,
                       prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
                       post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(Y3)),
                       post_mean_eta = matrix(0, 20, ncol(Y3)),
@@ -861,7 +880,7 @@ R0 <- cvi_npmm(Y3, variational_params = 20, prior_shape_alpha = 0.001,
                       prior_var_offd_cs_cov = 100000,
                       post_shape_d_cs_cov = matrix(0.001, 1, 20),
                       post_rate_d_cs_cov = matrix(0.001, 20, ncol(Y3)),
-                      post_var_offd_cs_cov = array(0.001, c(ncol(Y3), ncol(Y3), 20)),
+                      post_var_offd_cs_cov = matrix(0.001, 20, 3),
                       scaling_cov_eta = (nrow(Y3)+1))
 M1 <- as.integer(Sys.time())
 pred <- apply(R0$posterior$'log Probability matrix', MARGIN = 1, FUN=which.max)
@@ -980,6 +999,41 @@ Fig_5 <- inset_grid / p0 +
 #        width = 12, height = 7.75, units = "in")
 Fig_5
 #generates Fig_5.pdf in Results/Figures folder
+
+#Fig_1 with different covariance per cluster
+k_post_df <- as.data.frame(read.csv("Results/k_post_diff_sigma_per_cluster.csv"))
+ari_df <- as.data.frame(read.csv("Results/ari_diff_sigma_per_cluster.csv"))
+
+k_dat_df <- pivot_longer(k_post_df, cols = everything(), names_to = "Model", values_to = "Value")
+ari_dat_df <- pivot_longer(ari_df, cols = everything(), names_to = "Model", values_to = "Value")
+
+my_col <- c(met.brewer("Signac")[3],met.brewer("Signac")[6],met.brewer("Signac")[4],met.brewer("Signac")[5],met.brewer("Signac")[10],met.brewer("Signac")[13],met.brewer("Signac")[12],met.brewer("Signac")[11])
+p1 <- ggplot(k_dat_df, aes(x = Model, y = Value, color = Model)) +
+       geom_boxplot(fill = "grey88") +
+       ggtitle(expression("(a) " * K[post] * " boxplots")) +
+       scale_color_manual(values = my_col) +
+       theme_minimal() +
+       labs(x = "",
+            y = "Posterior Cluster number (averaged)") +
+       theme(plot.title = element_text(size = 18)) +
+       theme(axis.title.x = element_text(size = 10),
+                         axis.title.y = element_text(size = 12),
+                         panel.grid.major.x = element_blank(),   
+                         panel.grid.minor.x = element_blank()) +
+     theme(legend.position = "none")
+p2 <- ggplot(ari_dat_df, aes(x = Model, y = Value, color = Model)) +
+       geom_boxplot(fill = "grey88") +
+       ggtitle("(b) ARI boxplots") +
+       scale_color_manual(values = my_col) + 
+       theme_minimal() +
+       labs(x = "", y = "ARI")+
+       theme(plot.title = element_text(size = 18)) +
+       theme(axis.title.x = element_text(size = 10),
+                         axis.title.y = element_text(size = 12),
+                         panel.grid.major.x = element_blank(),   
+                         panel.grid.minor.x = element_blank())
+
+p1+p2
 
 #sessionInfo
 S <- sessionInfo()
