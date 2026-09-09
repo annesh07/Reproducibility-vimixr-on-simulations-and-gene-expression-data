@@ -1,9 +1,10 @@
 #install required packages
-packages <- c("vimixr", "MetBrewer", "patchwork", "mclust", "readxl", 
+packages <- c("MetBrewer", "patchwork", "mclust", "readxl", 
               "dplyr", "ggplot2", "tidyr", "scales", "NPflow", "colorspace", 
               "readr", "viridis", "circlize", "rlang", "gridtext",
               "grid", "gridExtra", "dbscan", "HDclassif", "FNN", "cluster", 
-              "reticulate", "igraph", "utils")
+              "reticulate", "igraph", "utils", "GEOquery", "Matrix", "reshape2",
+              "irlba")
 
 for (p in packages) {
   if (!requireNamespace(p, quietly = TRUE)) {
@@ -14,15 +15,21 @@ for (p in packages){
   library(p, character.only = TRUE)
 }
 
-#install biomaRt and ComplexHeatmap
+#install vimixr latest version
+remotes::install_github("annesh07/vimixr", force = TRUE)
+library(vimixr)
+
+#install biomaRt, ComplexHeatmap and GEOquery
 if (!require("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 BiocManager::install(ask = FALSE)
 BiocManager::install("biomaRt", ask = FALSE, force = TRUE)
 BiocManager::install("ComplexHeatmap", ask = FALSE, force = TRUE)
+BiocManager::install("GEOquery", ask = FALSE, force = TRUE)
+
 library(biomaRt)
 library(ComplexHeatmap)
-
+library(GEOquery)
 ##fig 1
 #results from Curta Cluster 
 #for different N=100 to N=1000 (10 sheets each), with fixed D=2 and K=2, 
@@ -259,111 +266,260 @@ Fig_S2 <- p1|p2
 Fig_S2
 #generates Fig_S2.pdf in Results/Figures folder
 
-
 ##fig Supplementary 3
-#processed results from Curta Cluster
-#mean average run time of Sparse DPMM calculated by taking the sample average
-#of 100 simulation runs for different N, values can be found in 
-#varied_csSparse_N.xlsx at B102 cell of each sheet in every 10 sheets corresponding
-#to 10 sample size N; similar results for comparing speed across dimension D
-#in varied_csSparse_D.xlsx
+# N <- 100
+# D <- 1000
+# l_allot <- c(rep(0,33), rep(1,33), rep(2,34))
+# set.seed(30032026)
+# X <- matrix(0, N, D)
+# for (n in 1:N){
+#   X[n,] <- rnorm(D, 0, 1) + l_allot[n]*5
+# }
+# 
+# Results <- matrix(0, 1000, 7)
+# for (m in 1:1000){
+#     a <- runif(1, 0.001, 2000)
+#     b <- runif(1, 0.001, 2000)
+#     Plog <- matrix(runif(20*nrow(X), -1, -0.0006), nrow = nrow(X))
+#     R0 <- vimixr::cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+#                            prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
+#                            post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
+#                            post_mean_eta = matrix(0, 20, ncol(X)),
+#                            log_prob_matrix = Plog, maxit = 1000, n_inits = 1,
+#                            covariance_type="full",fixed_variance=FALSE,
+#                            cluster_specific_covariance = TRUE,
+#                            variance_prior_type = "sparse",
+#                            prior_shape_d_cs_cov = matrix(a, 1, 20),
+#                            prior_rate_d_cs_cov = matrix(b, 20, ncol(X)),
+#                            prior_var_offd_cs_cov = 100000,
+#                            post_shape_d_cs_cov = matrix(0.001, 1, 20),
+#                            post_rate_d_cs_cov = matrix(0.001, 20, ncol(X)),
+#                            post_var_offd_cs_cov = array(0.001, c(ncol(X), ncol(X), 20)),
+#                            scaling_cov_eta = (nrow(X)+1))
+#     pred <- apply(R0$posterior$'log Probability matrix', MARGIN = 1, FUN=which.max)
+#     ari <- mclust::adjustedRandIndex(l_allot, pred)
+#     last_opt <- R0$optimisation$ELBO[[length(R0$optimisation$ELBO)]]
+#     VLL <- unname(last_opt)[4]
+#     cl <- R0$posterior$`Cluster number`
+#     elb <- sum(last_opt)
+#     k0 <- cl*D + cl*(D*(D+1)/2) + cl-1
+#     Bic <- -2*VLL + k0*log(N)
+# 
+# 
+#     Results[m, ] <- c(a, b, VLL, elb, ari, cl, Bic)
+# }
+# write.csv(Results, file = "Grid_diffa0b0_fixedk0.csv", row.names = FALSE)
+# 
+# Results <- matrix(0, 1000, 7)
+# for (m in 1:1000){
+#     a <- runif(1, 0.001, 2000)
+#     k <- runif(1, 0.001, 2000)
+#     Plog <- matrix(runif(20*nrow(X), -1, -0.0006), nrow = nrow(X))
+#     R0 <- vimixr::cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+#                            prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
+#                            post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
+#                            post_mean_eta = matrix(0, 20, ncol(X)),
+#                            log_prob_matrix = Plog, maxit = 1000, n_inits = 1,
+#                            covariance_type="full",fixed_variance=FALSE,
+#                            cluster_specific_covariance = TRUE,
+#                            variance_prior_type = "sparse",
+#                            prior_shape_d_cs_cov = matrix(a, 1, 20),
+#                            prior_rate_d_cs_cov = matrix(a, 20, ncol(X)),
+#                            prior_var_offd_cs_cov = 100000,
+#                            post_shape_d_cs_cov = matrix(0.001, 1, 20),
+#                            post_rate_d_cs_cov = matrix(0.001, 20, ncol(X)),
+#                            post_var_offd_cs_cov = array(0.001, c(ncol(X), ncol(X), 20)),
+#                            scaling_cov_eta = k)
+#     pred <- apply(R0$posterior$'log Probability matrix', MARGIN = 1, FUN=which.max)
+#     ari <- mclust::adjustedRandIndex(l_allot, pred)
+#     last_opt <- R0$optimisation$ELBO[[length(R0$optimisation$ELBO)]]
+#     VLL <- unname(last_opt)[4]
+#     cl <- R0$posterior$`Cluster number`
+#     elb <- sum(last_opt)
+#     k0 <- cl*D + cl*(D*(D+1)/2) + cl-1
+#     Bic <- -2*VLL + k0*log(N)
+# 
+# 
+#     Results[m, ] <- c(a, k, VLL, elb, ari, cl, Bic)
+# }
+# write.csv(Results, file = "Grid_diffa0=b0_diffk0.csv", row.names = FALSE)
 
-sample_sizes <- seq(100, 1000, by = 100)
-dimensions   <- seq(100, 1000, by = 100)
+Results <- read.csv("Results/Grid_diffa0b0_fixedk0.csv")
+Results$Clusters <- as.factor(Results$CL)
+Results1 <- read.csv("Results/Grid_diffa0=b0_diffk0.csv")
+Results1$Clusters <- as.factor(Results1$Clusters)
 
-read_raw <- function(path, sizes, col_name) {
-  sheets <- excel_sheets(path)          
-  stopifnot(length(sheets) >= length(sizes))
+library(ggplot2)
+library(MetBrewer)
+my_col1 <- met.brewer("Nizami")[c(1,2,6,8)]
+p1 <- ggplot(Results, aes(x = a0, y = b0)) +
   
-  purrr::map2_dfr(sheets[seq_along(sizes)], sizes, function(sh, sz) {
-    df <- read_excel(path, sheet = sh)
-    tibble(
-      size    = sz,
-      runtime = df[[col_name]][1:100]   
-    )
-  })
-}
-
-raw_n <- read_raw("Results/varied_csSparse_N.xlsx", sample_sizes, col_name = "Avg. Time")
-raw_d <- read_raw("Results/varied_csSparse_D.xlsx", dimensions,   col_name = "Avg. Time")
-
-raw_n <- raw_n |>
-  mutate(x_transformed = size^2 * log(size))
-
-raw_d <- raw_d |>
-  mutate(x_transformed = size^(3/2) * log(size)^3 * log(log(size))^4)
-
-extract_bp_medians <- function(raw_df) {
-  tmp <- ggplot(raw_df, aes(x = x_transformed, y = runtime, group = factor(size))) +
-    geom_boxplot()
-  bp_data <- ggplot_build(tmp)$data[[1]]
-  data.frame(
-    x_transformed = bp_data$x,   
-    median_rt     = bp_data$middle
-  )
-}
-
-med_n <- extract_bp_medians(raw_n)
-med_d <- extract_bp_medians(raw_d)
-
-fitn <- lm(median_rt ~ x_transformed, data = med_n)
-fitd <- lm(median_rt ~ x_transformed, data = med_d)
-
-pred_n <- make_pred(fitn, raw_n$x_transformed)
-pred_d <- make_pred(fitd, raw_d$x_transformed)
-
-p3 <- ggplot(raw_n, aes(x = x_transformed, y = runtime, group = factor(size))) +
-  geom_boxplot(
-    width         = diff(range(raw_n$x_transformed)) / 15,
-    fill          = "lightgrey",
-    colour        = "maroon",         
-    outlier.size  = 1,
-    outlier.alpha = 0.5
-  ) +
-  geom_line(
-    data   = pred_n,
-    aes(x = x, y = y, group = NULL),
-    colour = "darkblue", linewidth = 1
-  ) +
-  ggtitle("(a) Dependency on N ~ O(N² log N)") +
-  labs(x = expression(N^2 * log(N)), y = "Time per iteration (seconds)") +
-  scale_x_continuous(labels = approx_scientific) +
+  geom_point(aes(colour = Clusters, shape = Clusters), size = 2.75, alpha = 0.8) +
+  geom_rug(aes(colour = Clusters), show.legend=FALSE, linewidth=0.0002)+
+  scale_color_manual(values = my_col1) +
+  scale_shape_manual(values=c(15, 4,3,20)) +
+  labs(
+    title = expression(K[post] * " corresponding to different " * a[0] * ", " * 
+                         b[0] * " (fixed " * k[0] * ")"),
+    x = expression(a[0]),
+    y = expression(b[0])) +
   theme_minimal() +
   theme(
-    plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
-    axis.title = element_text(size = 9)
+    legend.position = "right",             
+    legend.box = "vertical",               
+    aspect.ratio = 1                       
   )
 
-p4 <- ggplot(raw_d, aes(x = x_transformed, y = runtime, group = factor(size))) +
-  geom_boxplot(
-    width         = diff(range(raw_d$x_transformed)) / 15,
-    fill          = "lightgrey",
-    colour        = "maroon",
-    outlier.size  = 1,
-    outlier.alpha = 0.5
-  ) +
-  geom_line(
-    data   = pred_d,
-    aes(x = x, y = y, group = NULL),
-    colour = "darkblue", linewidth = 1
-  ) +
-  ggtitle("(b) Dependency on d ~ O(d^1.5 · log(d)³ · log(log(d))⁴)") +
-  labs(x = expression(d^1.5 * log(d)^3 * log(log(d))^4), y = "Time per iteration (seconds)") +
-  scale_x_continuous(labels = approx_scientific) +
+my_col2 <- met.brewer("Nizami")[c(2,6,8,3,5,7,1)]
+p2 <- ggplot(Results1, aes(x = A, y = K)) +
+  
+  geom_point(aes(colour = Clusters, shape = Clusters), size = 2.75, alpha = 0.8) +
+  geom_rug(aes(colour = Clusters), show.legend=FALSE, linewidth=0.0002)+
+  scale_color_manual(values = my_col2) +
+  scale_shape_manual(values=c( 4,3,20, 17, 19, 6, 15)) +
+  labs(
+    title = expression(K[post] * " corresponding to different " * a[0] *"="*b[0] * 
+                         " and " * k[0]),
+    x = expression(a[0]*"="*b[0]),
+    y = expression(k[0])) +
   theme_minimal() +
   theme(
-    plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
-    axis.title = element_text(size = 9)
+    legend.position = "right",             
+    legend.box = "vertical",               
+    aspect.ratio = 1                       
   )
-Fig_S3 <- p3|p4
+
+Fig_S3 <- p1+p2
 
 # ggsave("Fig_S3.pdf", plot = Fig_S3, device = "pdf", path = "Results/Figures",
-#        width = 7, height = 4.25, units = "in")
+#        width = 12, height = 6, units = "in")
 Fig_S3
 #generates Fig_S3.pdf in Results/Figures folder
 
 
 ##fig Supplementary 4
+#mean average run time of Sparse DPMM calculated by taking the sample average
+#of 100 simulation runs for different N, values can be found in 
+#Results_n.csv corresponding to 10 sample size N; similar results for comparing 
+#speed across dimension D in Results_d.csv
+
+# D0 <- seq(100, 1000, 100)
+# l_allot <- c(rep(0,33), rep(1,33), rep(2,34))
+# N <- 100
+# 
+# Results_d <- matrix(0, 10, 100)
+# for (i in 1:10){
+#   D <- D0[i]
+#   X <- matrix(0, N, D)
+#   for (n in 1:N){
+#     X[n,] <- rnorm(D, 0, 1) + l_allot[n]*5
+#   }
+#   
+#   m <- rep(0, 100)
+#   for (j in 1:100){
+#     m0 <- as.numeric(Sys.time())
+#     R0 <- vimixr::cvi_npmm(X, variational_params = 10, prior_shape_alpha = 0.001, 
+#                            prior_rate_alpha = 0.001, post_shape_alpha = 0.001, 
+#                            post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)), 
+#                            post_mean_eta = matrix(0, 10, ncol(X)),
+#                            log_prob_matrix = NULL,
+#                            maxit = 1000,
+#                            n_inits = 1,
+#                            covariance_type="full",fixed_variance=FALSE,
+#                            cluster_specific_covariance = TRUE,
+#                            variance_prior_type = "sparse",
+#                            prior_shape_d_cs_cov = matrix(15199.11, 1, 10),
+#                            prior_rate_d_cs_cov = matrix(15199.11, 10, ncol(X)),
+#                            prior_var_offd_cs_cov = 100000,
+#                            post_shape_d_cs_cov = matrix(0.001, 1, 10),
+#                            post_rate_d_cs_cov = matrix(0.001, 10, ncol(X)),
+#                            post_var_offd_cs_cov = matrix(0.001, 10, 3),
+#                            scaling_cov_eta = (nrow(X)+1))
+#     m1 <- as.numeric(Sys.time())
+#     
+#     m[j] <- (m1 - m0)/R0$optimisation$Iterations
+#   }
+#   
+#   Results_d[i,] <- m
+# }  
+# 
+# 
+# N0 <- seq(100, 1000, 100)
+# D <- 100
+# 
+# Results_n <- matrix(0, 10, 100)
+# for (i in 1:10){
+#   N <- N0[i]
+#   l_allot <- c(rep(0,N/2), rep(1,N/2))
+#   X <- matrix(0, N, D)
+#   for (n in 1:N){
+#     X[n,] <- rnorm(D, 0, 1) + l_allot[n]*5
+#   }
+#   
+#   m <- rep(0, 100)
+#   for (j in 1:100){
+#     m0 <- as.numeric(Sys.time())
+#     R0 <- vimixr::cvi_npmm(X, variational_params = 10, prior_shape_alpha = 0.001, 
+#                            prior_rate_alpha = 0.001, post_shape_alpha = 0.001, 
+#                            post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)), 
+#                            post_mean_eta = matrix(0, 10, ncol(X)),
+#                            log_prob_matrix = NULL,
+#                            maxit = 1000,
+#                            n_inits = 1,
+#                            covariance_type="full",fixed_variance=FALSE,
+#                            cluster_specific_covariance = TRUE,
+#                            variance_prior_type = "sparse",
+#                            prior_shape_d_cs_cov = matrix(0.001, 1, 10),
+#                            prior_rate_d_cs_cov = matrix(0.001, 10, ncol(X)),
+#                            prior_var_offd_cs_cov = 100000,
+#                            post_shape_d_cs_cov = matrix(0.001, 1, 10),
+#                            post_rate_d_cs_cov = matrix(0.001, 10, ncol(X)),
+#                            post_var_offd_cs_cov = matrix(0.001, 10, 3),
+#                            scaling_cov_eta = (nrow(X)+1))
+#     m1 <- as.numeric(Sys.time())
+#     
+#     m[j] <- (m1 - m0)/R0$optimisation$Iterations
+#   }
+#   
+#   Results_n[i,] <- m
+# } 
+
+N0 <- seq(100, 1000, 100)
+Results_n <- as.matrix(read.csv("Results/Results_n.csv"))
+df_n <- data.frame(N    = N0[as.vector(row(Results_n))],
+                   time = as.vector(Results_n))
+
+p1 <- ggplot(df_n, aes(N, time)) +
+  geom_boxplot(aes(group = N), fill          = "lightgrey",
+               colour        = "maroon") +
+  geom_smooth(method = "lm", se = TRUE, colour = "darkblue", linewidth = 1) +
+  labs(x = "N", y = "Time per iteration (s)")+
+  ggtitle("(a) Dependency on N ~ O(N)")+
+  scale_x_continuous(labels = scales::label_scientific())+
+  theme_minimal()
+
+D0 <- N0
+Results_d <- as.matrix(read.csv("Results/Results_d.csv"))
+df_d <- data.frame(D    = D0[as.vector(row(Results_d))],
+                   time = as.vector(Results_d))
+
+p2<- ggplot(df_d, aes(D^2, time)) +
+  geom_boxplot(aes(group = D), fill          = "lightgrey",
+               colour        = "maroon") +                 
+  geom_smooth(method = "lm", se = TRUE, colour = "darkblue", linewidth = 1) +        
+  labs(x = expression(d^2), y = "Time per iteration (s)")+
+  ggtitle("(b) Dependency on d ~ O(d^2)")+
+  scale_x_continuous(labels = scales::label_scientific())+
+  theme_minimal()
+Fig_S4 <- p1|p2
+
+# ggsave("Fig_S4.pdf", plot = Fig_S4, device = "pdf", path = "Results/Figures",
+#        width = 7.50, height = 5.00, units = "in")
+Fig_S4
+#generates Fig_S4.pdf in Results/Figures folder
+
+
+##fig Supplementary 5
 #comparison between vimixr and an MCMC splice sampling technique, 
 #implemented using DPMGibbsN function from NPflow package; due to time taken
 #for microbenching, the results are provided as violinplot.csv
@@ -415,7 +571,7 @@ violinplot = read.csv("Results/violinplot.csv")
 violinplot$time <- violinplot$time/1e+9
 df <- as.data.frame(violinplot)
 violin_col <- met.brewer("Hokusai2")[c(2,5)]
-Fig_S4 <- ggplot(df, aes(x=expr, y=time, fill = expr)) +
+Fig_S5 <- ggplot(df, aes(x=expr, y=time, fill = expr)) +
   geom_violin(trim=FALSE) +
   scale_y_log10(
     breaks = scales::log_breaks(base = 10),
@@ -433,10 +589,10 @@ Fig_S4 <- ggplot(df, aes(x=expr, y=time, fill = expr)) +
         axis.title.y = element_text(size = 14),
         axis.text.x = element_text(size = 12, face = "bold"))
 
-# ggsave("Fig_S4.pdf", plot = Fig_S3, device = "pdf", path = "Results/Figures",
+# ggsave("Fig_S5.pdf", plot = Fig_S5, device = "pdf", path = "Results/Figures",
 #        width = 5.76, height = 4.20, units = "in")
-Fig_S4
-#generates Fig_S4.pdf in Results/Figures folder
+Fig_S5
+#generates Fig_S5.pdf in Results/Figures folder
 
 
 #Leukemia data implementation
@@ -467,7 +623,7 @@ tag1 <- as.character(data1[1, 2:73])
 #                          prior_var_offd_cs_cov = 100000,
 #                          post_shape_d_cs_cov = matrix(0.001, 1, 20),
 #                          post_rate_d_cs_cov = matrix(0.001, 20, ncol(Y3)),
-#                          post_var_offd_cs_cov = array(0.001, c(ncol(Y3), ncol(Y3), 20)),
+#                          post_var_offd_cs_cov = matrix(0.001, 20, 3),
 #                          scaling_cov_eta = (nrow(Y3)+1))
 # pred <- apply(R0$posterior$'log Probability matrix', MARGIN = 1, FUN=which.max)
 
@@ -540,7 +696,7 @@ Fig_3
 #                          prior_var_offd_cs_cov = 100000,
 #                          post_shape_d_cs_cov = matrix(0.001, 1, 20),
 #                          post_rate_d_cs_cov = matrix(0.001, 20, ncol(Y3)),
-#                          post_var_offd_cs_cov = array(0.001, c(ncol(Y3), ncol(Y3), 20)),
+#                          post_var_offd_cs_cov = matrix(0.001, 20, 3),
 #                          scaling_cov_eta = (nrow(Y3)+1))
 # pred4 <- apply(R0$posterior$'log Probability matrix', MARGIN = 1, FUN=which.max)
 
@@ -750,11 +906,11 @@ opt_k[5] <- which.max(bic_hddc_kmeans) + 1
 opt_k[6] <- which.max(mod_leiden) + 1
 opt_k[7] <- which.max(sil_width_kmeans) + 1
 
-#supplementary table tab_s1
-tab_S1 <- data.frame(algo_names, opt_k)
-names(tab_S1) <- c("Clustering method", "k_opt")
-# write.csv(tab_S1, file="Results/Tables/tab_S1.csv")
-View(tab_S1)
+#supplementary table tab_s3
+tab_S3 <- data.frame(algo_names, opt_k)
+names(tab_S3) <- c("Clustering method", "k_opt")
+# write.csv(tab_S3, file="Results/Tables/tab_S3.csv")
+View(tab_S3)
 
 #these provide the optimal k corresponding to every method 
 #(Supplementary Table S1), which is used to evaluate the Leukemia data, 
@@ -892,7 +1048,7 @@ ari_models[8] <- mclust::adjustedRandIndex(tag1, pred)
 algo_names[8] <- "Sparse DPMM"
 time_models <- round(time_models, digits = 2)
 
-#generating figure 7 
+#generating figure 5 
 n_algos <- length(ari_models)
 
 data <- data.frame(
@@ -1000,7 +1156,243 @@ Fig_5 <- inset_grid / p0 +
 Fig_5
 #generates Fig_5.pdf in Results/Figures folder
 
+##fig S6
+#the data is stored as getGEO("GSE116256", GSEMatrix = FALSE)
+m <- as.matrix(read.table(gzfile("GSE116256/raw/GSM3587950_AML419A-D0.dem.txt.gz"), header = TRUE, row.names = 1, sep = "\t", 
+                          check.names = FALSE))
+anno <- read.table(gzfile("GSE116256/raw/GSM3587951_AML419A-D0.anno.txt.gz"), header = TRUE, sep = "\t",
+                   stringsAsFactors = FALSE, check.names = FALSE)
+E <- t(t(m) / anno$TranscriptomeUMIs) * 10000
+E_log <- log1p(E)
+m0 <- scale(t(E_log))
+
+g180 <- read_excel("Results/mmc3.xlsx")
+g180 <- c(g180$`Tumor-derived, per cell-type`[2:31], g180$...9[2:31], 
+          g180$...10[2:31], g180$...11[2:31], g180$...12[2:31], g180$...13[2:31])
+
+
+sel_C  <- grepl("FLT3.*N841K", anno$MutTranscripts) & 
+  grepl("malignant", anno$PredictionRF2) |
+  grepl("FLT3.*N841K", anno$NanoporeTranscripts)
+sel_B  <- grepl("FLT3.*ITD", anno$MutTranscripts) & 
+  grepl("malignant", anno$PredictionRF2) |
+  (grepl("FLT3\\.ITD/", anno$NanoporeTranscripts) & 
+     !grepl("N841K", anno$NanoporeTranscripts))
+sel_AB <- grepl("FLT3.*A680V", anno$MutTranscripts) & 
+  !grepl("N841K|ITD", anno$MutTranscripts) |
+  (grepl("A680V", anno$NanoporeTranscripts) & 
+     !grepl("FLT3\\.ITD/", anno$NanoporeTranscripts) &
+     !grepl("N841K", anno$NanoporeTranscripts))
+
+sel <- sel_C | sel_B | sel_AB
+anno40 <- anno[sel,]
+m40 <- m0[sel,g180]
+nan_genes <- !is.na(colSums(m40))
+Y3 <- m40[,nan_genes]
+
+R1 <- vimixr::cvi_npmm(Y3, variational_params = 20, prior_shape_alpha = 0.001, 
+                       prior_rate_alpha = 0.001, post_shape_alpha = 0.001, 
+                       post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(Y3)), 
+                       post_mean_eta = matrix(0, 20, ncol(Y3)),
+                       log_prob_matrix = NULL,
+                       maxit = 500,
+                       n_inits = 1,
+                       Seed = c("80290"),
+                       covariance_type="full",fixed_variance=FALSE,
+                       cluster_specific_covariance = TRUE,
+                       variance_prior_type = "sparse",
+                       prior_shape_d_cs_cov = matrix(100, 1, 20),
+                       prior_rate_d_cs_cov = matrix(100, 20, ncol(Y3)),
+                       prior_var_offd_cs_cov = 1000000,
+                       post_shape_d_cs_cov = matrix(0.001, 1, 20),
+                       post_rate_d_cs_cov = matrix(0.001, 20, ncol(Y3)),
+                       post_var_offd_cs_cov = matrix(0.001, 20, 3),
+                       scaling_cov_eta = (nrow(Y3)+1))
+
+#pca 
+cl_pred <- apply(R1$posterior$`log Probability matrix`, 1, which.max)
+pca <- prcomp_irlba(Y3,2)
+#variation explained
+var_explained <- pca$sdev^2 / pca$totalvar
+pc1_pct <- round(var_explained[1] * 100, 2)
+pc2_pct <- round(var_explained[2] * 100, 2)
+#the plot
+pca_df <- data.frame("PC1" = pca$x[,1], "PC2" = pca$x[,2], "Cluster" = as.factor(cl_pred))
+my_col <- MetBrewer::met.brewer("Hiroshige", n = 10)
+col1 <- my_col[c(1,3,5,7,9)]
+x_range <- range(pca_df$PC1)
+y_range <- range(pca_df$PC2)
+x_lim <- x_range + c(-0.5, 0.5)
+y_lim <- y_range + c(-0.5, 0.5)
+ggplot_pca <- ggplot(pca_df, aes(x = PC1, y = PC2, fill = Cluster,  shape = Cluster)) +
+  ggrastr::geom_point_rast(shape = 21, size = 3, alpha = 0.75, stroke = 0.25,
+    color = "#1a1a1a", raster.dpi = 300) +
+  scale_fill_manual(values = col1, name = "Cluster") +
+  scale_x_continuous(limits = x_lim, expand = expansion(0)) +
+  scale_y_continuous(limits = y_lim, expand = expansion(0)) +
+  labs(title = "PCA projection of SparseDPMM clusters",
+    x = paste0("PC 1 (", pc1_pct, "%)"),
+    y = paste0("PC 2 (", pc2_pct, "%)")) +
+  theme_minimal(base_size = 11) +
+  theme(panel.grid.major = element_line(color = "grey92", linewidth = 0.25),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(color = "grey75", fill = NA, linewidth = 0.4),
+    axis.title.x = element_text(size = 10, margin = margin(t = 6)),
+    axis.title.y = element_text(size = 10, margin = margin(r = 6)),
+    axis.text = element_text(size = 8, color = "grey40"),
+    axis.ticks = element_line(color = "grey70", linewidth = 0.3),
+    axis.ticks.length = unit(3, "pt"),
+    plot.title = element_text(hjust = 0.5, size = 12, face = "bold",
+                                    margin = margin(b = 8)),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 8),
+    plot.margin = margin(15, 15, 15, 15)) +
+  guides(fill = guide_legend(override.aes = list(size = 3, alpha = 1, stroke = 0.4),
+    ncol = 1))
+
+m40_raw <- m[g180, sel]
+dot_data <- melt(m40_raw, varnames = c("gene", "cell"), value.name = "count")
+
+dot_data$gene <- factor(dot_data$gene, levels = unique(dot_data$gene))
+
+genes <- levels(dot_data$gene)
+
+facet_labels <- c("HSC-like", "Progenitor-like", "GMP-like", "Promono-like",
+  "Monocyte-like", "cDC-like")
+gene_facet_df <- data.frame(gene = genes, facet = rep(facet_labels, each = 30))
+dot_data <- merge(dot_data, gene_facet_df, by = "gene")
+dot_data$color_group <- ifelse(dot_data$count == 0, "Zero", "Non-zero")
+
+p2 <- ggplot(dot_data, aes(x = cell, y = gene, size = count, color = color_group)) +
+  geom_point(alpha = 0.6, shape = 16) +
+  scale_size_continuous(range = c(0.5, 6),
+    name = "Raw count",
+    breaks = function(x) {
+      b <- pretty(x)
+      b[b > 0]
+    }) +
+  scale_color_manual(values = c("Zero" = "#8B0000","Non-zero" = "steelblue"),
+    name = "Count status") +
+  facet_grid(rows = vars(facet), scales = "free_y", space = "free_y", switch = "y") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.title.x = element_text(face = "bold", size = 16),
+    axis.title.y = element_text(face = "bold", size = 16),
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 20),
+    panel.grid.major = element_line(color = "grey90", linewidth = 0.3),
+    panel.grid.minor = element_blank(),
+    legend.position = "right",
+    legend.box = "vertical",
+    strip.placement = "outside",
+    strip.text.y.left = element_text(angle = 0, size = 8),
+    strip.background = element_blank()) +
+  labs(x = "Cells", y = "Genes",
+    title = "Raw gene count per AML malignant cell") +
+  guides(size = guide_legend(override.aes = list(color = "steelblue")),
+    color = guide_legend(override.aes = list(size = 3))
+  )
+
+Fig_S6 <- p2/ggplot_pca
+
+# ggsave("Fig_S6.pdf", plot = Fig_S6, device = "pdf", path = "Results/Figures",
+#        width = 10.00, height = 7.00, units = "in")
+Fig_S6
+#generates Fig_S6.pdf in Results/Figures folder
+
+##fig S7
+col_fun <- colorRamp2(c(-3, 0, 3), c("#2166AC", "white", "#B2182B"))
+
+gene_block <- rep(c("HSC-like","Prog-like","GMP-like","Promono-like","Mono-like",
+                    "cDC-like"), each = 30)
+gene_block_present <- gene_block[nan_genes]
+gene_block_present <- factor(gene_block_present, 
+                             levels = c("HSC-like","Prog-like","GMP-like",
+                                        "Promono-like","Mono-like","cDC-like"))
+
+subclone <- ifelse(sel_C,  "Subclone C", "Subclones A/B and B")
+subclone <- factor(subclone, levels = c("Subclones A/B and B", "Subclone C"))
+
+has_A680V <- as.integer(grepl("FLT3.*A680V", anno$MutTranscripts) & 
+                          !grepl("N841K|ITD", anno$MutTranscripts) |
+                          (grepl("A680V", anno$NanoporeTranscripts) & 
+                             !grepl("FLT3\\.ITD/", anno$NanoporeTranscripts) &
+                             !grepl("N841K", anno$NanoporeTranscripts)))
+has_ITD   <- as.integer(grepl("FLT3.*ITD", anno$MutTranscripts) & 
+                          grepl("malignant", anno$PredictionRF2) |
+                          (grepl("FLT3\\.ITD/", anno$NanoporeTranscripts) & 
+                             !grepl("N841K", anno$NanoporeTranscripts)))
+has_N841K <- as.integer(grepl("FLT3.*N841K", anno$MutTranscripts) & 
+                          grepl("malignant", anno$PredictionRF2) |
+                          grepl("FLT3.*N841K", anno$NanoporeTranscripts))
+
+top_anno <- HeatmapAnnotation(`FLT3 A680V` = has_A680V, `FLT3 ITD`   = has_ITD,
+  `FLT3 N841K` = has_N841K,
+  col = list(`FLT3 A680V` = c("0" = "grey", "1" = "black"),
+    `FLT3 ITD`   = c("0" = "grey", "1" = "black"),
+    `FLT3 N841K` = c("0" = "grey", "1" = "black")),
+  annotation_name_side = "left", show_legend = FALSE)
+
+bottom_anno <- HeatmapAnnotation(
+  `Labelled Cell types`   = factor(anno40$CellType, 
+                                   levels = c("Prog-like", "Mono-like", "cDC-like", "ProMono-like", "HSC-like", "")),
+  `SparseDPMM clusters` = as.factor(apply(R1$posterior$`log Probability matrix`, 1, which.max)),
+  col = list(
+    `Labelled Cell types` = c("Prog-like" = "#FF7F00", "Mono-like" = "#377EB8",
+      "cDC-like" = "#984EA3", "ProMono-like" = "#4DAF4A", "HSC-like" = "#E41A1C"),
+    `SparseDPMM clusters` = c("1" = "#FF7F00", "2" = "#377EB8", "3" = "#984EA3",
+      "4" = "#4DAF4A", "5" = "#E41A1C")),
+  annotation_name_side = "left")
+
+ht <- Heatmap(
+  t(Y3),
+  name = "Expression-level",
+  col = col_fun,
+  
+  column_split = subclone[sel],
+  cluster_columns = FALSE,
+  
+  row_split = gene_block_present,
+  cluster_rows = FALSE,
+  row_title = levels(gene_block_present), 
+  row_title_side = "left",
+  row_title_rot = 0,
+  row_title_gp = gpar(fontsize = 8),
+  
+  top_annotation = top_anno[sel],
+  bottom_annotation = bottom_anno,
+  
+  show_row_names = FALSE,
+  show_column_names = FALSE,
+  
+  row_gap = unit(2, "mm"),
+  column_gap = unit(2, "mm"),
+  border = TRUE
+)
+
+draw(ht,
+     column_title = "AML419A Subclone Hierarchy: Mallignant Cell-types Clustering",
+     column_title_gp = gpar(fontsize = 20, fontface = "bold"),
+     column_title_side = "top",
+     row_title = "Genes",
+     row_title_side = "left",
+     row_title_gp = gpar(fontsize = 16, fontface = "bold"),
+     padding = unit(c(10, 3, 10, 3), "mm")
+)
+
+grid::grid.text("Cells", x = 0.45, y = unit(5, "mm"), 
+                gp = gpar(fontsize = 16, fontface = "bold"))
+#generate Fig_S7
+
+##fig S8
 #Fig_1 with different covariance per cluster
+#results from Curta Cluster 
+#for different N=100 to N=1000 with fixed D=2 and K=2, 
+#and 100 different initialisations for the log of latent  probability 
+#allocation matrix Plog; the output contains 2 csv files corresponding to 
+#number of clusters & ARI respectively for the 8 models considered
 k_post_df <- as.data.frame(read.csv("Results/k_post_diff_sigma_per_cluster.csv"))
 ari_df <- as.data.frame(read.csv("Results/ari_diff_sigma_per_cluster.csv"))
 
@@ -1033,7 +1425,102 @@ p2 <- ggplot(ari_dat_df, aes(x = Model, y = Value, color = Model)) +
                          panel.grid.major.x = element_blank(),   
                          panel.grid.minor.x = element_blank())
 
-p1+p2
+Fig_S8 <- p1+p2
+
+# ggsave("Fig_S8.pdf", plot = Fig_S8, device = "pdf", path = "Results/Figures",
+#        width = 6.00, height = 4.19, units = "in")
+Fig_S8
+#generates Fig_S8.pdf in Results/Figures folder
+
+#supplementary table S1
+#The following code generated the data for the comparison table as Results_bic.csv
+# N <- 100
+# D <- 1000
+# l_allot <- c(rep(0,33), rep(1,33), rep(2,34))
+# set.seed(24042026)
+# X <- matrix(0, N, D)
+# for (n in 1:N){
+#   X[n,] <- rnorm(D, 0, 1) + l_allot[n]*5
+# }
+# 
+# 
+# Results <- matrix(0, 1000, 15)
+# for (m in 1:1000){
+#   Plog <- matrix(runif(20*nrow(X), -1, -0.0006), nrow = nrow(X))
+#   R0 <- vimixr::cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+#                          prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
+#                          post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
+#                          post_mean_eta = matrix(0, 20, ncol(X)),
+#                          log_prob_matrix = Plog, maxit = 1000, n_inits = 1,
+#                          covariance_type="full",fixed_variance=FALSE,
+#                          cluster_specific_covariance = TRUE,
+#                          variance_prior_type = "sparse",
+#                          prior_shape_d_cs_cov = matrix(rep(100, 20), nrow = 1, ncol = 20),
+#                          prior_rate_d_cs_cov = matrix(rep(100, 20*ncol(X)), 20, ncol(X)),
+#                          prior_var_offd_cs_cov = 1000,
+#                          post_shape_d_cs_cov = matrix(0.001, 1, 20),
+#                          post_rate_d_cs_cov = matrix(0.001, 20, ncol(X)),
+#                          post_var_offd_cs_cov = array(0.001, c(ncol(X), ncol(X), 20)),
+#                          scaling_cov_eta = nrow(X))
+#   pred <- apply(R0$posterior$'log Probability matrix', MARGIN = 1, FUN=which.max)
+#   ari <- mclust::adjustedRandIndex(l_allot, pred)
+#   last_opt <- R0$optimisation$ELBO[[length(R0$optimisation$ELBO)]]
+#   VLL <- unname(last_opt)[4]
+#   cl <- R0$posterior$`Cluster number`
+#   elb <- sum(last_opt)
+#   k0 <- cl*D + cl*(D*(D+1)/2) + cl-1
+#   Bic <- -2*VLL + k0*log(N)
+# 
+#   R1 <- vimixr::cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+#                          prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
+#                          post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
+#                          post_mean_eta = matrix(0, 20, ncol(X)),
+#                          log_prob_matrix = Plog, maxit = 1000, n_inits = 1,
+#                          covariance_type="full",fixed_variance=FALSE,
+#                          cluster_specific_covariance = TRUE,
+#                          variance_prior_type = "IW",
+#                          prior_df_cs_cov = ncol(X) + 2,
+#                          prior_scale_cs_cov = diag(ncol(X)),
+#                          post_df_cs_cov = matrix(rep(ncol(X) + 2, 20), nrow = 1),
+#                          post_scale_cs_cov = array(rep(diag(ncol(X)), 20), c(ncol(X), ncol(X), 20)),
+#                          scaling_cov_eta = nrow(X))
+#   pred1 <- apply(R1$posterior$'log Probability matrix', MARGIN = 1, FUN=which.max)
+#   ari1 <- mclust::adjustedRandIndex(l_allot, pred1)
+#   last_opt1 <- R1$optimisation$ELBO[[length(R1$optimisation$ELBO)]]
+#   VLL1 <- unname(last_opt1)[4]
+#   cl1 <- R1$posterior$`Cluster number`
+#   elb1 <- sum(last_opt1)
+#   k1 <- cl1*D + cl1*(D*(D+1)/2) + cl1-1
+#   Bic1 <- -2*VLL1 + k1*log(N)
+# 
+#   R2 <- vimixr::cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+#                          prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
+#                          post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
+#                          post_mean_eta = matrix(0, 20, ncol(X)),
+#                          log_prob_matrix = Plog, maxit = 1000, n_inits = 1,
+#                          covariance_type="full",fixed_variance=FALSE,
+#                          cluster_specific_covariance = TRUE,
+#                          variance_prior_type = "off-diagonal normal",
+#                          prior_shape_d_cs_cov = matrix(rep(100, 20), nrow = 1, ncol = 20),
+#                          prior_rate_d_cs_cov = 100,
+#                          prior_var_offd_cs_cov = 0.0001,
+#                          post_shape_d_cs_cov = matrix(0.001, 1, 20),
+#                          post_rate_d_cs_cov = matrix(0.001, 20, ncol(X)),
+#                          post_mean_offd_cs_cov = array(rep(diag(ncol(X)), 20), c(ncol(X), ncol(X), 20)),
+#                          scaling_cov_eta = nrow(X))
+#   pred2 <- apply(R2$posterior$'log Probability matrix', MARGIN = 1, FUN=which.max)
+#   ari2 <- mclust::adjustedRandIndex(l_allot, pred2)
+#   last_opt2 <- R2$optimisation$ELBO[[length(R2$optimisation$ELBO)]]
+#   VLL2 <- unname(last_opt2)[4]
+#   cl2 <- R2$posterior$`Cluster number`
+#   elb2 <- sum(last_opt2)
+#   k2 <- cl2*D + cl2*(D*(D+1)/2) + cl2-1
+#   Bic2 <- -2*VLL2 + k2*log(N)
+# 
+# 
+#   Results[m, ] <- c(VLL, elb, ari, cl, Bic, VLL1, elb1, ari1, cl1, Bic1, VLL2, elb2, ari2, cl2, Bic2)
+# }
+#Taking average (mean) of the corresponding columns we get the table S1
 
 #sessionInfo
 S <- sessionInfo()
